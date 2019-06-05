@@ -8,7 +8,7 @@ public interface DrawComponentIf {
      * Initialize the DrawComponent
      * @return true when successful
      */
-    boolean init();
+    boolean init(DrawContextIf context);
 
     /**
      * bind needed data before draw calls

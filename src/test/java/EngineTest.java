@@ -1,6 +1,7 @@
 import com.esipeng.opengl.engine.base.DrawComponentBase;
 import com.esipeng.opengl.engine.base.Engine;
 import com.esipeng.opengl.engine.spi.DrawComponentIf;
+import com.esipeng.opengl.engine.spi.DrawContextIf;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,7 +35,7 @@ public class EngineTest {
         }
 
         @Override
-        public boolean init() {
+        public boolean init(DrawContextIf context) {
             return true;
         }
     }
@@ -42,7 +43,7 @@ public class EngineTest {
     @Before
     public void setUp(){
         phase1 = mock(DrawComponentBase.class);
-        when(phase1.init()).thenReturn(true);
+        when(phase1.init(any())).thenReturn(true);
         when(phase1.getInputDatum()).thenReturn(new HashSet<>());
         when(phase1.getOutputDatum()).thenReturn(new HashSet<String>(){{
             add("phase1o");
@@ -50,7 +51,7 @@ public class EngineTest {
         when(phase1.getName()).thenReturn("phase1");
 
         phase2 = mock(DrawComponentBase.class);
-        when(phase2.init()).thenReturn(true);
+        when(phase2.init(any())).thenReturn(true);
         when(phase2.getInputDatum()).thenReturn(new HashSet<String>(){{
             add("phase1o");
         }});
@@ -61,7 +62,7 @@ public class EngineTest {
         when(phase2.getName()).thenReturn("phase2");
 
         phase2o = mock(DrawComponentBase.class);
-        when(phase2o.init()).thenReturn(true);
+        when(phase2o.init(any())).thenReturn(true);
         when(phase2o.getInputDatum()).thenReturn(new HashSet<String>());
         when(phase2o.getOutputDatum()).thenReturn(new HashSet<String>(){{
             add("phase1o");
@@ -70,7 +71,7 @@ public class EngineTest {
 
 
         phase3 = mock(DrawComponentBase.class);
-        when(phase3.init()).thenReturn(true);
+        when(phase3.init(any())).thenReturn(true);
         when(phase3.getInputDatum()).thenReturn(new HashSet<String>(){{
             add("phase2oa");
             add("phase2ob");
@@ -88,9 +89,9 @@ public class EngineTest {
         engine.addDrawComponent(phase1).addDrawComponent(phase2).addDrawComponent(phase3);
         assertTrue(engine.initAllComponents());
         assertThat(engineLogger.getLoggingEvents(), is(new ArrayList<>()));
-        Mockito.verify(phase1, Mockito.times(1)).init();
-        Mockito.verify(phase2, Mockito.times(1)).init();
-        Mockito.verify(phase3, Mockito.times(1)).init();
+        Mockito.verify(phase1, Mockito.times(1)).init(any());
+        Mockito.verify(phase2, Mockito.times(1)).init(any());
+        Mockito.verify(phase3, Mockito.times(1)).init(any());
     }
 
     @Test
@@ -110,8 +111,8 @@ public class EngineTest {
         Engine engine = new Engine(1024,1024);
         engine.addDrawComponent(phase1).addDrawComponent(phase2o);
         assertTrue(engine.initAllComponents());
-        Mockito.verify(phase1, Mockito.times(1)).init();
-        Mockito.verify(phase2o, Mockito.times(1)).init();
+        Mockito.verify(phase1, Mockito.times(1)).init(any());
+        Mockito.verify(phase2o, Mockito.times(1)).init(any());
 
         assertThat(engineLogger.getLoggingEvents(), is(asList(
             warn("{} overwrites datum {}", "phase2o", "phase1o")

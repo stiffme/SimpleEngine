@@ -2,15 +2,24 @@ package com.esipeng.opengl.engine.base;
 
 import com.esipeng.opengl.engine.spi.DrawComponentIf;
 import com.esipeng.opengl.engine.spi.DrawContextIf;
+import org.joml.Vector3f;
+import org.lwjgl.opengl.GL33;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.LinkedHashSet;
 import java.util.Set;
+
 import static org.lwjgl.opengl.GL33.*;
 
 public class DrawComponentBase implements DrawComponentIf {
+    private static final Logger logger = LoggerFactory.getLogger(DrawComponentBase.class);
     private Set<String> inputDatum, outputDatum;
     private String name;
+    private LinkedHashSet<Integer> m_vbos, m_vaos, m_shaders,
+            m_programs, m_textures, m_framebuffers, m_renderBuffer;
 
     protected DrawComponentBase(
             String name,
@@ -20,9 +29,17 @@ public class DrawComponentBase implements DrawComponentIf {
         this.inputDatum = inputDatum;
         this.outputDatum = outputDatum;
         this.name = name;
+
+        m_vaos = new LinkedHashSet<>();
+        m_vbos = new LinkedHashSet<>();
+        m_shaders = new LinkedHashSet<>();
+        m_programs = new LinkedHashSet<>();
+        m_textures = new LinkedHashSet<>();
+        m_framebuffers = new LinkedHashSet<>();
+        m_renderBuffer = new LinkedHashSet<>();
     }
 
-    public boolean init() {
+    public boolean init(DrawContextIf context) {
         return false;
     }
 
@@ -39,7 +56,13 @@ public class DrawComponentBase implements DrawComponentIf {
     }
 
     public void release(DrawContextIf context) {
-
+        m_programs.forEach(GL33::glDeleteProgram);
+        m_shaders.forEach(GL33::glDeleteShader);
+        m_vbos.forEach(GL33::glDeleteBuffers);
+        m_vaos.forEach(GL33::glDeleteVertexArrays);
+        m_textures.forEach(GL33::glDeleteTextures);
+        m_framebuffers.forEach(GL33::glDeleteFramebuffers);
+        m_renderBuffer.forEach(GL33::glDeleteRenderbuffers);
     }
 
     public Set<String> getInputDatum() {
@@ -69,6 +92,7 @@ public class DrawComponentBase implements DrawComponentIf {
                     glGetProgramInfoLog(program));
             return 0;
         }
+        m_programs.add(program);
         return program;
     }
 
@@ -88,6 +112,7 @@ public class DrawComponentBase implements DrawComponentIf {
                     glGetProgramInfoLog(program));
             return 0;
         }
+        m_programs.add(program);
         return program;
     }
 
@@ -102,8 +127,21 @@ public class DrawComponentBase implements DrawComponentIf {
             System.out.println(glGetShaderInfoLog(shader));
             throw new Exception("Failed to compile shader");
         }
+        m_shaders.add(shader);
         return shader;
 
+    }
+
+    protected String loadFileFromResource(String resource ) throws Exception {
+        return new String(Files.readAllBytes(Paths.get(getClass().getClassLoader().getResource(resource).toURI())));
+    }
+
+    protected byte[] loadBinaryFileFromResource(String resource ) throws Exception {
+        return Files.readAllBytes(Paths.get(getClass().getClassLoader().getResource(resource).toURI()));
+    }
+
+    protected String getResourcePath(String resource) throws Exception  {
+        return Paths.get(getClass().getClassLoader().getResource(resource).toURI()).toAbsolutePath().toString();
     }
 
     protected int compileAndLinkProgram(String vShaderPath, String fShaderPath) throws Exception    {
@@ -127,12 +165,83 @@ public class DrawComponentBase implements DrawComponentIf {
         return program;
     }
 
-    protected String loadFileFromResource(String resource ) throws Exception {
-        return new String(Files.readAllBytes(Paths.get(getClass().getClassLoader().getResource(resource).toURI())));
+    protected int getManagedRenderBuffer()  {
+        int rbo = glGenRenderbuffers();
+        m_renderBuffer.add(rbo);
+        return rbo;
     }
 
-    protected String getResourcePath(String resource) throws Exception  {
-        return Paths.get(getClass().getClassLoader().getResource(resource).toURI()).toAbsolutePath().toString();
+    protected int getManagedVBO()  {
+        int vbo = glGenBuffers();
+        m_vbos.add(vbo);
+        return vbo;
+    }
+
+    protected int getManagedVAO()  {
+        int vao = glGenVertexArrays();
+        m_vaos.add(vao);
+        return vao;
+    }
+
+    protected int getManagedTexture()   {
+        int texture = glGenTextures();
+        m_textures.add(texture);
+        return texture;
+    }
+
+    protected int getManagedFramebuffer()   {
+        int framebuffer = glGenFramebuffers();
+        m_framebuffers.add(framebuffer);
+        return framebuffer;
+    }
+
+    //convinient function
+    protected boolean setUniform1i(int program, String uniform, int value)   {
+        int uniformLoc = glGetUniformLocation(program,uniform);
+        if(uniformLoc == -1)    {
+            logger.warn("Uniform {} not set for {}", uniform, value);
+            return false;
+        }
+        glUseProgram(program);
+        glUniform1i(uniformLoc, value);
+        return true;
+    }
+
+    protected boolean setUniform1f(int program, String uniform, float value)   {
+        int uniformLoc = glGetUniformLocation(program,uniform);
+        if(uniformLoc == -1)    {
+            logger.warn("Uniform {} not set for {}", uniform, value);
+            return false;
+        }
+        glUseProgram(program);
+        glUniform1f(uniformLoc, value);
+        return true;
+    }
+
+    protected boolean setUniform3f(int program, String uniform, float v1, float v2, float v3)   {
+        int uniformLoc = glGetUniformLocation(program,uniform);
+        if(uniformLoc == -1)    {
+            logger.warn("Uniform {} not set for {} {} {}", uniform, v1, v2, v3);
+            return false;
+        }
+        glUseProgram(program);
+        glUniform3f(uniformLoc, v1, v2, v3);
+        return true;
+    }
+
+    protected boolean setUniform3f(int program, String uniform, Vector3f data)   {
+        return setUniform3f(program,uniform, data.x, data.y, data.z);
+    }
+
+    protected boolean setUniformMatrix4(int program, String uniform, float[] data)   {
+        int uniformLoc = glGetUniformLocation(program,uniform);
+        if(uniformLoc == -1)    {
+            logger.warn("Uniform {} not set ", uniform);
+            return false;
+        }
+        glUseProgram(program);
+        glUniformMatrix4fv(uniformLoc,false, data);
+        return true;
     }
 
 }

@@ -3,10 +3,13 @@ package com.esipeng.opengl.engine.base;
 import com.esipeng.opengl.engine.spi.DrawComponentIf;
 import com.esipeng.opengl.engine.spi.DrawContextIf;
 import com.esipeng.opengl.engine.spi.DrawableObjectIf;
+import org.lwjgl.glfw.GLFWVidMode;
+import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.system.MemoryUtil.NULL;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -19,6 +22,7 @@ public class Engine implements DrawContextIf {
     private Map<String, Integer> datums;
     private int screenWidth, screenHeight;
     private DrawComponentIf currentComponent;
+    private long window;
 
     public Engine(int width, int height)    {
         this.screenHeight = height;
@@ -27,8 +31,34 @@ public class Engine implements DrawContextIf {
 
     }
 
-    public void createGLContext(boolean fullScreen)   {
+    public void createGLContext(boolean fullScreen, boolean debug)   {
+        if(!glfwInit())
+            throw new RuntimeException("GLFW init failed");
 
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        if(debug)
+            glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
+
+        if(!fullScreen) {
+            window = glfwCreateWindow(screenWidth, screenHeight,"Simple Engine", NULL, NULL);
+        } else  {
+            long monitor = glfwGetPrimaryMonitor();
+            GLFWVidMode mode = glfwGetVideoMode(monitor);
+            glfwWindowHint(GLFW_RED_BITS, mode.redBits());
+            glfwWindowHint(GLFW_GREEN_BITS, mode.greenBits());
+            glfwWindowHint(GLFW_BLUE_BITS, mode.blueBits());
+            glfwWindowHint(GLFW_REFRESH_RATE, mode.refreshRate());
+            screenWidth = mode.width();
+            screenHeight = mode.height();
+            window = glfwCreateWindow(screenWidth, screenHeight,"Simple Engine", monitor, NULL);
+        }
+        if(window == NULL)
+            throw new RuntimeException("Window is not created!");
+
+        glfwMakeContextCurrent(window);
+        GL.createCapabilities();
     }
 
     public int getScreenWidth() {
@@ -54,7 +84,7 @@ public class Engine implements DrawContextIf {
 
         //first initialize all the components
         for(DrawComponentIf drawComponentIf : components)   {
-            if(!drawComponentIf.init())
+            if(!drawComponentIf.init(this))
                 return false;
         }
         //validate
@@ -96,6 +126,7 @@ public class Engine implements DrawContextIf {
             drawComponentIf.draw(this);
             drawComponentIf.afterDraw(this);
         }
+        glfwSwapBuffers(window);
     }
 
     @Override
@@ -132,5 +163,13 @@ public class Engine implements DrawContextIf {
             }
         }
         return 0;
+    }
+
+    public void release()   {
+        for(DrawComponentIf drawComponentIf : components)   {
+            drawComponentIf.release(this);
+        }
+
+        glfwTerminate();
     }
 }
