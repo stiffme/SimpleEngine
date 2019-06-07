@@ -4,7 +4,9 @@ import com.esipeng.opengl.engine.spi.DrawableObjectIf;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-public abstract class DrawableObjectBase implements DrawableObjectIf {
+public abstract class DrawableObjectBase
+        extends ManagedObject
+        implements DrawableObjectIf {
     protected Vector3f position;
     protected float scaleX, scaleY, scaleZ;
     protected float rotateRadian;
@@ -69,10 +71,10 @@ public abstract class DrawableObjectBase implements DrawableObjectIf {
         return modelMat;
     }
 
-    @Override
-    public void release(){
-        Mesh[] meshes = getMeshes();
-        for(Mesh mesh : meshes)
-            mesh.release();
-    }
+//    @Override
+//    public void release() {
+//        super.release();
+//        for(Mesh mesh : getMeshes())
+//            mesh.release();
+//    }
 }

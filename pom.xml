@@ -102,16 +102,17 @@
             <version>RELEASE</version>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>cch.qos.logback</groupId>-->
-<!--            <artifactId>logback-core</artifactId>-->
-<!--            <version>RELEASE</version>-->
-<!--            <scope>runtime</scope>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>1.2.3</version>
+            <scope>runtime</scope>
+        </dependency>
+
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>RELEASE</version>
+            <version>1.2.3</version>
             <scope>runtime</scope>
         </dependency>
 

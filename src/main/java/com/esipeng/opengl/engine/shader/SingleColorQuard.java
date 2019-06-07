@@ -1,15 +1,13 @@
 package com.esipeng.opengl.engine.shader;
 
 import com.esipeng.opengl.engine.base.DrawComponentBase;
-import com.esipeng.opengl.engine.spi.DrawComponentIf;
 import com.esipeng.opengl.engine.spi.DrawContextIf;
 import org.joml.Vector3f;
 
 import java.util.HashSet;
+
 import static org.lwjgl.opengl.GL33.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
-
-import java.util.Set;
 
 public class SingleColorQuard extends DrawComponentBase {
     private Vector3f color;

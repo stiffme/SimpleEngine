@@ -1,9 +1,12 @@
 package com.esipeng.opengl.engine.spi;
 
-public interface DrawContextIf {
+import org.joml.Matrix4f;
+
+public interface DrawContextIf  extends ReleaseIf{
     void updateDatum(String key, int value);
     int retrieveDatum(String key);
     int getScreenWidth();
     int getScreenHeight();
-    DrawableObjectIf getCurrentDrawableObject();
+    Iterable<DrawableObjectIf> getCurrentDrawableObject();
+    void updateModel(Matrix4f model);
 }

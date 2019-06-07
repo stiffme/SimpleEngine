@@ -5,8 +5,9 @@ import com.esipeng.opengl.engine.spi.DrawContextIf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.lwjgl.opengl.GL33.*;
 import java.util.HashSet;
+
+import static org.lwjgl.opengl.GL33.*;
 
 public class OutputScreen extends DrawComponentBase {
     private static Logger logger = LoggerFactory.getLogger(OutputScreen.class);
@@ -64,6 +65,9 @@ public class OutputScreen extends DrawComponentBase {
 
     @Override
     public void beforeDraw(DrawContextIf context) {
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_STENCIL_TEST);
+
         glBindVertexArray(vao);
         glUseProgram(program);
         glActiveTexture(GL_TEXTURE0 + SCREEN_TEXTURE);

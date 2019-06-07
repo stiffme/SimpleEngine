@@ -2,7 +2,7 @@ package com.esipeng.opengl.engine.spi;
 
 import java.util.Set;
 
-public interface DrawComponentIf {
+public interface DrawComponentIf extends ReleaseIf{
 
     /**
      * Initialize the DrawComponent
@@ -28,11 +28,6 @@ public interface DrawComponentIf {
      */
     void afterDraw(DrawContextIf context);
 
-    /**
-     * release all resources
-     * @param context drawing context
-     */
-    void release(DrawContextIf context);
 
     /**
      * get all input datum

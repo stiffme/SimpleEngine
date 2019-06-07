@@ -5,5 +5,5 @@ in vec2 texCoord;
 
 void main() {
     FragColor = texture(screenTexture,texCoord);
-    FragColor.z = 1.0f;
+    FragColor = vec4(FragColor.rgb, 1.0);
 }

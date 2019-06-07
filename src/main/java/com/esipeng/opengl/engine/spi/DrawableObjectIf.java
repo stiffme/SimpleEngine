@@ -4,7 +4,7 @@ import com.esipeng.opengl.engine.base.Mesh;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-public interface DrawableObjectIf {
+public interface DrawableObjectIf extends ReleaseIf {
     Vector3f getPosition();
     void setPosition(float x, float y, float z);
     void setPosition(Vector3f position);
@@ -16,6 +16,5 @@ public interface DrawableObjectIf {
     void setRotate(float radians, float x, float y, float z);
 
     Matrix4f getModelMatrix();
-    Mesh[] getMeshes();
-    void release();
+    Iterable<Mesh> getMeshes();
 }

@@ -3,23 +3,27 @@ package com.esipeng.opengl.engine.base;
 import com.esipeng.opengl.engine.spi.DrawComponentIf;
 import com.esipeng.opengl.engine.spi.DrawContextIf;
 import com.esipeng.opengl.engine.spi.DrawableObjectIf;
+import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GLCapabilities;
+import org.lwjgl.opengl.GLDebugMessageARBCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.system.MemoryUtil.NULL;
-import static com.esipeng.opengl.engine.base.Constants.*;
-import static org.lwjgl.opengl.GL33.*;
-
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
-public class Engine implements DrawContextIf {
+import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.ARBDebugOutput.*;
+import static org.lwjgl.opengl.GL33.glClearColor;
+import static org.lwjgl.opengl.GL33.glEnable;
+import static org.lwjgl.system.MemoryUtil.NULL;
+
+public class Engine
+        extends ManagedObject
+        implements DrawContextIf {
     private static final Logger logger = LoggerFactory.getLogger(Engine.class);
 
     private LinkedList<DrawComponentIf> components;
@@ -27,16 +31,18 @@ public class Engine implements DrawContextIf {
     private int screenWidth, screenHeight;
     private DrawComponentIf currentComponent;
     private long window;
-    private DrawableObjectIf currentDrawableObject;
-    private int dummyProgram;
+    private World world;
     private MVPManager mvpManager;
-
+    private Camera camera;
+    private float previousTime;
+    private Matrix4f projection;
 
     public Engine(int width, int height)    {
         this.screenHeight = height;
         this.screenWidth = width;
         components = new LinkedList<>();
         mvpManager = new MVPManager();
+        projection = new Matrix4f();
     }
 
     public void createGLContext(boolean fullScreen, boolean debug)   {
@@ -66,7 +72,43 @@ public class Engine implements DrawContextIf {
             throw new RuntimeException("Window is not created!");
 
         glfwMakeContextCurrent(window);
+        camera = new Camera(window);
         GL.createCapabilities();
+        glClearColor(0f,0f,0f,1f);
+
+        if(debug)
+            enableDebug();
+
+    }
+
+    private void enableDebug()  {
+        GLCapabilities capabilities = GL.getCapabilities();
+        if(capabilities.GL_ARB_debug_output)    {
+            logger.debug("Debug supported!");
+            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+            glDebugMessageCallbackARB(new GLDebugMessageARBCallback() {
+                @Override
+                public void invoke(int source, int type, int id, int severity, int length, long message, long userParam) {
+                    String strMsg = getMessage(length,message);
+                    switch (severity)   {
+                        case GL_DEBUG_SEVERITY_HIGH_ARB:
+                            logger.error(strMsg);
+                            break;
+                        case GL_DEBUG_SEVERITY_MEDIUM_ARB:
+                            logger.warn(strMsg);
+                            break;
+                        case GL_DEBUG_SEVERITY_LOW_ARB:
+                            logger.info(strMsg);
+                            break;
+                        default:
+                            logger.info(strMsg);
+                            break;
+                    }
+                }
+            }, 0L);
+        } else {
+            logger.warn("Debug not supported!");
+        }
     }
 
     public int getScreenWidth() {
@@ -98,6 +140,8 @@ public class Engine implements DrawContextIf {
             if(!drawComponentIf.init(this))
                 return false;
         }
+
+        previousTime = (float)glfwGetTime();
         //validate
         return validateChain();
     }
@@ -129,8 +173,23 @@ public class Engine implements DrawContextIf {
         return true;
     }
 
-    public void draw(DrawableObjectIf drawableObjectIf) {
-        currentDrawableObject = drawableObjectIf;
+    public void draw(World world) {
+        //check if ESC is pressed
+        if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+            glfwSetWindowShouldClose(window, true);
+
+        this.world = world;
+        float currentT = (float)glfwGetTime();
+        float elapsed = currentT - previousTime;
+        previousTime = currentT;
+
+        camera.processInput(elapsed);
+        //set view
+        mvpManager.updateView(camera.generateViewMat());
+        //set projection
+        projection.setPerspective(camera.getFovRadians(),(float)screenWidth/screenHeight,0.1f,100f);
+        mvpManager.updateProjection(projection);
+
         datums.clear();
         for(DrawComponentIf drawComponentIf:components) {
             this.currentComponent = drawComponentIf;
@@ -141,9 +200,18 @@ public class Engine implements DrawContextIf {
         glfwSwapBuffers(window);
     }
 
+    public boolean shouldCloseWindow()  {
+        return glfwWindowShouldClose(window);
+    }
+
     @Override
-    public DrawableObjectIf getCurrentDrawableObject() {
-        return currentDrawableObject;
+    public Iterable<DrawableObjectIf> getCurrentDrawableObject() {
+        return this.world.getAllObjects();
+    }
+
+    @Override
+    public void updateModel(Matrix4f model) {
+        mvpManager.updateModel(model);
     }
 
     @Override
@@ -157,7 +225,7 @@ public class Engine implements DrawContextIf {
                         key);
             } else  {
                 //updating datum
-                logger.debug("Updating datum {} to {}", key, value);
+                //logger.debug("Updating datum {} to {}", key, value);
                 datums.put(key, value);
             }
         }
@@ -175,7 +243,7 @@ public class Engine implements DrawContextIf {
             } else  {
                 //retrieving datum
                 int value = datums.get(key);
-                logger.debug("Retrieving datum {} from {}", key, value);
+                //logger.debug("Retrieving datum {} from {}", key, value);
                 return value;
             }
         }
@@ -184,16 +252,18 @@ public class Engine implements DrawContextIf {
 
     public void release()   {
         for(DrawComponentIf drawComponentIf : components)   {
-            drawComponentIf.release(this);
+            drawComponentIf.release();
         }
-
-        glDeleteProgram(dummyProgram);
-        dummyProgram = 0;
-
+        super.release();
         glfwTerminate();
     }
 
+    public void enableFpsView() {
+        camera.enableMouseFpsView();
+    }
+
     private boolean initUniformBlock()  {
+        int dummyProgram;
         try {
             dummyProgram = compileAndLinkProgram(
                     "shader/DummyUniformBlock/vertex.glsl",
@@ -205,51 +275,5 @@ public class Engine implements DrawContextIf {
         }
 
         return mvpManager.bindProgram(dummyProgram);
-    }
-
-    private int linkProgram(int vShader, int fShader)    {
-        int program = glCreateProgram();
-        if(program == 0)
-            return 0;
-
-        glAttachShader(program, vShader);
-        glAttachShader(program, fShader);
-        glLinkProgram(program);
-
-        int linkStatus = glGetProgrami(program, GL_LINK_STATUS);
-        if(linkStatus != GL_TRUE)   {
-            logger.error("Link failed {}" ,
-                    glGetProgramInfoLog(program));
-            return 0;
-        }
-        return program;
-    }
-
-    private int compileAndLinkProgram(String vShaderPath, String fShaderPath) throws Exception    {
-        String vShaderSrc = loadFileFromResource(vShaderPath);
-        String fShaderSrc = loadFileFromResource(fShaderPath);
-        int vShader = loadShader(GL_VERTEX_SHADER, vShaderSrc);
-        int fShader = loadShader(GL_FRAGMENT_SHADER, fShaderSrc);
-        int program = linkProgram(vShader, fShader);
-        return program;
-    }
-
-    private String loadFileFromResource(String resource ) throws Exception {
-        return new String(Files.readAllBytes(Paths.get(getClass().getClassLoader().getResource(resource).toURI())));
-    }
-
-    private int loadShader(int type, String shaderSrc) throws Exception    {
-        int shader = glCreateShader(type);
-        glShaderSource(shader,shaderSrc);
-        glCompileShader(shader);
-
-        int compiled = glGetShaderi(shader, GL_COMPILE_STATUS);
-        if(compiled != GL_TRUE) {
-            logger.error("Failed to compile shader {}! ", shaderSrc );
-            logger.error(glGetShaderInfoLog(shader));
-            throw new Exception("Failed to compile shader");
-        }
-        return shader;
-
     }
 }

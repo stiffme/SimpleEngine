@@ -87,7 +87,7 @@ public class EngineTest {
         TestLoggerFactory.clear();
         Engine engine = new Engine(1024,1024);
         try{
-            engine.createGLContext(false, true);
+            engine.createGLContext(false, false);
             engine.addDrawComponent(phase1).addDrawComponent(phase2).addDrawComponent(phase3);
             assertTrue(engine.initAllComponents());
             assertThat(engineLogger.getLoggingEvents(), is(new ArrayList<>()));
@@ -107,7 +107,7 @@ public class EngineTest {
         TestLoggerFactory.clear();
         Engine engine = new Engine(1024,1024);
         try{
-            engine.createGLContext(false, true);
+            engine.createGLContext(false, false);
             engine.addDrawComponent(phase1).addDrawComponent(phase3);
             assertFalse(engine.initAllComponents());
 
@@ -127,7 +127,7 @@ public class EngineTest {
         TestLoggerFactory.clear();
         Engine engine = new Engine(1024,1024);
         try{
-            engine.createGLContext(false, true);
+            engine.createGLContext(false, false);
             engine.addDrawComponent(phase1).addDrawComponent(phase2o);
             assertTrue(engine.initAllComponents());
             Mockito.verify(phase1, Mockito.times(1)).init(any());

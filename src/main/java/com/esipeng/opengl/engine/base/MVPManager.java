@@ -2,7 +2,6 @@ package com.esipeng.opengl.engine.base;
 
 import org.joml.Matrix4f;
 
-
 import static com.esipeng.opengl.engine.base.Constants.MVP_BINDING_POINT;
 import static org.lwjgl.opengl.GL15.glGenBuffers;
 import static org.lwjgl.opengl.GL30.glBindBufferBase;
