@@ -86,37 +86,61 @@ public class EngineTest {
     public void testSuccessfulChain()   {
         TestLoggerFactory.clear();
         Engine engine = new Engine(1024,1024);
-        engine.addDrawComponent(phase1).addDrawComponent(phase2).addDrawComponent(phase3);
-        assertTrue(engine.initAllComponents());
-        assertThat(engineLogger.getLoggingEvents(), is(new ArrayList<>()));
-        Mockito.verify(phase1, Mockito.times(1)).init(any());
-        Mockito.verify(phase2, Mockito.times(1)).init(any());
-        Mockito.verify(phase3, Mockito.times(1)).init(any());
+        try{
+            engine.createGLContext(false, true);
+            engine.addDrawComponent(phase1).addDrawComponent(phase2).addDrawComponent(phase3);
+            assertTrue(engine.initAllComponents());
+            assertThat(engineLogger.getLoggingEvents(), is(new ArrayList<>()));
+            Mockito.verify(phase1, Mockito.times(1)).init(any());
+            Mockito.verify(phase2, Mockito.times(1)).init(any());
+            Mockito.verify(phase3, Mockito.times(1)).init(any());
+
+        } catch (Exception e)   {
+            e.printStackTrace();
+        } finally {
+            engine.release();
+        }
     }
 
     @Test
     public void testUnsuccessfulChain() {
         TestLoggerFactory.clear();
         Engine engine = new Engine(1024,1024);
-        engine.addDrawComponent(phase1).addDrawComponent(phase3);
-        assertFalse(engine.initAllComponents());
+        try{
+            engine.createGLContext(false, true);
+            engine.addDrawComponent(phase1).addDrawComponent(phase3);
+            assertFalse(engine.initAllComponents());
 
-        assertThat(engineLogger.getLoggingEvents(),
-                is(Collections.singletonList(error("{} needs input datum {}, not found", "phase3", "phase2oa"))));
+            assertThat(engineLogger.getLoggingEvents(),
+                    is(Collections.singletonList(error("{} needs input datum {}, not found", "phase3", "phase2oa"))));
+
+        } catch (Exception e)   {
+            e.printStackTrace();
+        }finally {
+            engine.release();
+        }
+
     }
 
     @Test
     public void testOverwritingChain()  {
         TestLoggerFactory.clear();
         Engine engine = new Engine(1024,1024);
-        engine.addDrawComponent(phase1).addDrawComponent(phase2o);
-        assertTrue(engine.initAllComponents());
-        Mockito.verify(phase1, Mockito.times(1)).init(any());
-        Mockito.verify(phase2o, Mockito.times(1)).init(any());
+        try{
+            engine.createGLContext(false, true);
+            engine.addDrawComponent(phase1).addDrawComponent(phase2o);
+            assertTrue(engine.initAllComponents());
+            Mockito.verify(phase1, Mockito.times(1)).init(any());
+            Mockito.verify(phase2o, Mockito.times(1)).init(any());
 
-        assertThat(engineLogger.getLoggingEvents(), is(asList(
-            warn("{} overwrites datum {}", "phase2o", "phase1o")
-        )));
+            assertThat(engineLogger.getLoggingEvents(), is(asList(
+                    warn("{} overwrites datum {}", "phase2o", "phase1o")
+            )));
+        } catch (Exception e)   {
+            e.printStackTrace();
+        }finally {
+            engine.release();
+        }
     }
 
 }

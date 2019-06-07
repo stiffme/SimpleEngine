@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.lwjgl.opengl.GL33.*;
-import static org.lwjgl.glfw.GLFW.*;
 import java.util.HashSet;
 
 public class OutputScreen extends DrawComponentBase {

@@ -5,4 +5,5 @@ public interface DrawContextIf {
     int retrieveDatum(String key);
     int getScreenWidth();
     int getScreenHeight();
+    DrawableObjectIf getCurrentDrawableObject();
 }

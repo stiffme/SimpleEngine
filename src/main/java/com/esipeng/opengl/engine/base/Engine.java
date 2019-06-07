@@ -10,7 +10,11 @@ import org.slf4j.LoggerFactory;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
+import static com.esipeng.opengl.engine.base.Constants.*;
+import static org.lwjgl.opengl.GL33.*;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -23,12 +27,16 @@ public class Engine implements DrawContextIf {
     private int screenWidth, screenHeight;
     private DrawComponentIf currentComponent;
     private long window;
+    private DrawableObjectIf currentDrawableObject;
+    private int dummyProgram;
+    private MVPManager mvpManager;
+
 
     public Engine(int width, int height)    {
         this.screenHeight = height;
         this.screenWidth = width;
         components = new LinkedList<>();
-
+        mvpManager = new MVPManager();
     }
 
     public void createGLContext(boolean fullScreen, boolean debug)   {
@@ -80,6 +88,9 @@ public class Engine implements DrawContextIf {
     }
 
     public boolean initAllComponents()  {
+        if(!initUniformBlock())
+            return false;
+
         datums = new HashMap<>();
 
         //first initialize all the components
@@ -119,6 +130,7 @@ public class Engine implements DrawContextIf {
     }
 
     public void draw(DrawableObjectIf drawableObjectIf) {
+        currentDrawableObject = drawableObjectIf;
         datums.clear();
         for(DrawComponentIf drawComponentIf:components) {
             this.currentComponent = drawComponentIf;
@@ -127,6 +139,11 @@ public class Engine implements DrawContextIf {
             drawComponentIf.afterDraw(this);
         }
         glfwSwapBuffers(window);
+    }
+
+    @Override
+    public DrawableObjectIf getCurrentDrawableObject() {
+        return currentDrawableObject;
     }
 
     @Override
@@ -170,6 +187,69 @@ public class Engine implements DrawContextIf {
             drawComponentIf.release(this);
         }
 
+        glDeleteProgram(dummyProgram);
+        dummyProgram = 0;
+
         glfwTerminate();
+    }
+
+    private boolean initUniformBlock()  {
+        try {
+            dummyProgram = compileAndLinkProgram(
+                    "shader/DummyUniformBlock/vertex.glsl",
+                    "shader/DummyUniformBlock/fragment.glsl"
+            );
+        } catch (Exception e)   {
+            e.printStackTrace();
+            return false;
+        }
+
+        return mvpManager.bindProgram(dummyProgram);
+    }
+
+    private int linkProgram(int vShader, int fShader)    {
+        int program = glCreateProgram();
+        if(program == 0)
+            return 0;
+
+        glAttachShader(program, vShader);
+        glAttachShader(program, fShader);
+        glLinkProgram(program);
+
+        int linkStatus = glGetProgrami(program, GL_LINK_STATUS);
+        if(linkStatus != GL_TRUE)   {
+            logger.error("Link failed {}" ,
+                    glGetProgramInfoLog(program));
+            return 0;
+        }
+        return program;
+    }
+
+    private int compileAndLinkProgram(String vShaderPath, String fShaderPath) throws Exception    {
+        String vShaderSrc = loadFileFromResource(vShaderPath);
+        String fShaderSrc = loadFileFromResource(fShaderPath);
+        int vShader = loadShader(GL_VERTEX_SHADER, vShaderSrc);
+        int fShader = loadShader(GL_FRAGMENT_SHADER, fShaderSrc);
+        int program = linkProgram(vShader, fShader);
+        return program;
+    }
+
+    private String loadFileFromResource(String resource ) throws Exception {
+        return new String(Files.readAllBytes(Paths.get(getClass().getClassLoader().getResource(resource).toURI())));
+    }
+
+    private int loadShader(int type, String shaderSrc) throws Exception    {
+        int shader = glCreateShader(type);
+        glShaderSource(shader,shaderSrc);
+        glCompileShader(shader);
+
+        int compiled = glGetShaderi(shader, GL_COMPILE_STATUS);
+        if(compiled != GL_TRUE) {
+            logger.error("Failed to compile shader {}! ", shaderSrc );
+            logger.error(glGetShaderInfoLog(shader));
+            throw new Exception("Failed to compile shader");
+        }
+        return shader;
+
     }
 }

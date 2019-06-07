@@ -7,27 +7,34 @@ import org.junit.Test;
 
 public class SingleColorQuardTest {
 
-    @Ignore
+    //@Ignore
     @Test
     public void testSingleColorQuard() throws Exception   {
         Engine engine = new Engine(1024,768);
-        engine.createGLContext(false, true);
-        //1, single color quard to FBO
-        DrawComponentIf singleColor =
-                new SingleColorQuard("SingleColor",
-                        "screen",
-                        0.0f,0.0f,1.0f);
+        try {
+            engine.createGLContext(false, true);
+            //1, single color quard to FBO
+            DrawComponentIf singleColor =
+                    new SingleColorQuard("SingleColor",
+                            "screen",
+                            0.0f,0.0f,1.0f);
 
-        //2, output to the screen
-        DrawComponentIf outputScreen =
-                new OutputScreen("outputScreen","screen");
+            //2, output to the screen
+            DrawComponentIf outputScreen =
+                    new OutputScreen("outputScreen","screen");
 
-        engine.addDrawComponent(singleColor);
-        engine.addDrawComponent(outputScreen);
-        assertTrue(engine.initAllComponents());
+            engine.addDrawComponent(singleColor);
+            engine.addDrawComponent(outputScreen);
+            assertTrue(engine.initAllComponents());
 
-        engine.draw(null);
+            engine.draw(null);
+        } catch (Exception e)   {
+            e.printStackTrace();
+        } finally {
+            engine.release();
+        }
 
-        engine.release();
+
+
     }
 }
