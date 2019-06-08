@@ -37,6 +37,10 @@ public class Engine
     private float previousTime;
     private Matrix4f projection;
 
+    //for FPS
+    private float timeElapsed = 0;
+    private int frameCount = 0;
+
     public Engine(int width, int height)    {
         this.screenHeight = height;
         this.screenWidth = width;
@@ -100,9 +104,9 @@ public class Engine
                         case GL_DEBUG_SEVERITY_LOW_ARB:
                             logger.info(strMsg);
                             break;
-                        default:
-                            logger.info(strMsg);
-                            break;
+//                        default:
+//                            logger.info("severity {}, msg {}", severity,strMsg);
+//                            break;
                     }
                 }
             }, 0L);
