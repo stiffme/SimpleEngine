@@ -29,6 +29,7 @@ public class DebugTextRenderer extends DrawComponentBase {
     private String debugContent;
     private STBTTBakedChar.Buffer cdata;
     private float[] vertices = new float[16 * LINE_SIZE];
+    private int[] indices = new int[5 * LINE_SIZE];
 
     public DebugTextRenderer(String name, String fontResource)  {
         super(name,new HashSet<>(), new HashSet<>());
@@ -76,14 +77,15 @@ public class DebugTextRenderer extends DrawComponentBase {
         ebo = getManagedVBO();
         glBindVertexArray(vao);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, Float.BYTES * 16, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertices, GL_DYNAMIC_DRAW);
         glVertexAttribPointer(0,2,GL_FLOAT,false,Float.BYTES * 4, 0L);
         glVertexAttribPointer(1,2,GL_FLOAT,false,Float.BYTES * 4, Float.BYTES * 2);
         glEnableVertexAttribArray(0);
         glEnableVertexAttribArray(1);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER,Integer.BYTES * 5, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER,indices, GL_DYNAMIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
 
         setUniform1i(program,"textTexture", TEXT_TEXTURE);
@@ -95,11 +97,18 @@ public class DebugTextRenderer extends DrawComponentBase {
         glUseProgram(program);
         glActiveTexture(GL_TEXTURE0 + TEXT_TEXTURE);
         glBindTexture(GL_TEXTURE_2D, fontTexture);
+
         glBindVertexArray(vao);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_STENCIL_TEST);
         glDisable(GL_CULL_FACE);
+
+        glEnable(GL_PRIMITIVE_RESTART);
+        glPrimitiveRestartIndex(0xFFFFFFFF);
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
@@ -110,37 +119,45 @@ public class DebugTextRenderer extends DrawComponentBase {
             FloatBuffer y = stack.floats(-context.getScreenHeight() + FONT_HEIGHT * 1.5f);
             STBTTAlignedQuad q = STBTTAlignedQuad.mallocStack(stack);
 
-            for(int i = 0; i < debugContent.length(); ++i)  {
+            int fontPos = 0;
+            for(int i = 0; i < Math.min(debugContent.length(), LINE_SIZE); ++i)  {
                 int c = debugContent.charAt(i);
                 if(c >= CODE_START && c < CODE_START + CODE_LENGTH)  {
+
                     stbtt_GetBakedQuad(cdata,BITMAP_W,BITMAP_H,c - 32,x,y,q,true);
-                    vertices[0] = q.x0() / context.getScreenWidth();
-                    vertices[1] = -q.y0() / context.getScreenHeight();
-                    vertices[2] = q.s0();
-                    vertices[3] = q.t0();
+                    vertices[fontPos * 16 +0] = q.x0() / context.getScreenWidth();
+                    vertices[fontPos * 16 +1] = -q.y0() / context.getScreenHeight();
+                    vertices[fontPos * 16 +2] = q.s0();
+                    vertices[fontPos * 16 +3] = q.t0();
 
-                    vertices[4] = q.x1()/ context.getScreenWidth();
-                    vertices[5] = -q.y0()/ context.getScreenHeight();
-                    vertices[6] = q.s1();
-                    vertices[7] = q.t0();
+                    vertices[fontPos * 16 +4] = q.x1()/ context.getScreenWidth();
+                    vertices[fontPos * 16 +5] = -q.y0()/ context.getScreenHeight();
+                    vertices[fontPos * 16 +6] = q.s1();
+                    vertices[fontPos * 16 +7] = q.t0();
 
 
-                    vertices[8] = q.x1()/ context.getScreenWidth();
-                    vertices[9] = -q.y1()/ context.getScreenHeight();
-                    vertices[10] = q.s1();
-                    vertices[11] = q.t1();
+                    vertices[fontPos * 16 +8] = q.x1()/ context.getScreenWidth();
+                    vertices[fontPos * 16 +9] = -q.y1()/ context.getScreenHeight();
+                    vertices[fontPos * 16 +10] = q.s1();
+                    vertices[fontPos * 16 +11] = q.t1();
 
-                    vertices[12] = q.x0()/ context.getScreenWidth();
-                    vertices[13] = -q.y1()/ context.getScreenHeight();
-                    vertices[14] = q.s0();
-                    vertices[15] = q.t1();
+                    vertices[fontPos * 16 +12] = q.x0()/ context.getScreenWidth();
+                    vertices[fontPos * 16 +13] = -q.y1()/ context.getScreenHeight();
+                    vertices[fontPos * 16 +14] = q.s0();
+                    vertices[fontPos * 16 +15] = q.t1();
 
-                    glBufferData(GL_ARRAY_BUFFER,vertices,GL_DYNAMIC_DRAW);
-                    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+                    indices[fontPos * 5 + 0] = fontPos * 4 + 0;
+                    indices[fontPos * 5 + 1] = fontPos * 4 + 1;
+                    indices[fontPos * 5 + 2] = fontPos * 4 + 2;
+                    indices[fontPos * 5 + 3] = fontPos * 4 + 3;
+                    indices[fontPos * 5 + 4] = 0xFFFFFFFF;
+                    ++fontPos;
                 }
             }
+            glBufferData(GL_ARRAY_BUFFER,vertices,GL_DYNAMIC_DRAW);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER,indices,GL_DYNAMIC_DRAW);
+            glDrawElements(GL_TRIANGLE_FAN, fontPos * 5, GL_UNSIGNED_INT, 0L);
         }
-
     }
 
     @Override
@@ -149,6 +166,7 @@ public class DebugTextRenderer extends DrawComponentBase {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glUseProgram(0);
         glBindTexture(GL_TEXTURE_2D, 0);
+        glDisable(GL_PRIMITIVE_RESTART);
     }
 
     @Override
