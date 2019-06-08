@@ -2,18 +2,19 @@ package com.esipeng.opengl.engine.shader;
 
 import com.esipeng.opengl.engine.base.DrawComponentBase;
 import com.esipeng.opengl.engine.spi.DrawContextIf;
-import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.stb.STBTTAlignedQuad;
 import org.lwjgl.stb.STBTTBakedChar;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
-import static org.lwjgl.stb.STBTruetype.*;
-import static org.lwjgl.opengl.GL33.*;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.HashSet;
+
+import static org.lwjgl.opengl.GL33.*;
+import static org.lwjgl.stb.STBTruetype.stbtt_BakeFontBitmap;
+import static org.lwjgl.stb.STBTruetype.stbtt_GetBakedQuad;
 
 public class DebugTextRenderer extends DrawComponentBase {
     private static final int TEXT_TEXTURE = 3;
@@ -21,8 +22,9 @@ public class DebugTextRenderer extends DrawComponentBase {
     private static final int BITMAP_H = 1024;
     private static final int CODE_START = 32;
     private static final int CODE_LENGTH = 96;
-    private static final float FONT_HEIGHT = 64f;
+    private static final float FONT_HEIGHT = 32f;
     private static final int LINE_SIZE = 64;
+    private static final int RESTART_INDEX = 0xFFFFFFFF;
 
     private int program, fontTexture, vao, vbo, ebo;
     private String fontResource;
@@ -107,21 +109,34 @@ public class DebugTextRenderer extends DrawComponentBase {
         glDisable(GL_CULL_FACE);
 
         glEnable(GL_PRIMITIVE_RESTART);
-        glPrimitiveRestartIndex(0xFFFFFFFF);
+        glPrimitiveRestartIndex(RESTART_INDEX);
 
+        //glEnable(GL_BLEND);
+        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     @Override
     public void draw(DrawContextIf context) {
+        if(debugContent == null || debugContent.isEmpty())
+            return;
+
+        String[] lines = debugContent.split("\n");
+        for(int i = 0; i < lines.length; ++i)   {
+            drawOneLine(context, lines[i], -context.getScreenWidth(), -context.getScreenHeight() + FONT_HEIGHT  * (i + 1));
+        }
+
+    }
+
+    private void drawOneLine(DrawContextIf context, String content, float xpos, float ypos)   {
         try(MemoryStack stack = MemoryStack.stackPush())    {
-            FloatBuffer x = stack.floats(-context.getScreenWidth());
-            FloatBuffer y = stack.floats(-context.getScreenHeight() + FONT_HEIGHT * 1.5f);
+            FloatBuffer x = stack.floats(xpos);
+            FloatBuffer y = stack.floats(ypos);
             STBTTAlignedQuad q = STBTTAlignedQuad.mallocStack(stack);
 
             int fontPos = 0;
-            for(int i = 0; i < Math.min(debugContent.length(), LINE_SIZE); ++i)  {
-                int c = debugContent.charAt(i);
+            for(int i = 0; i < Math.min(content.length(), LINE_SIZE); ++i)  {
+                int c = content.charAt(i);
                 if(c >= CODE_START && c < CODE_START + CODE_LENGTH)  {
 
                     stbtt_GetBakedQuad(cdata,BITMAP_W,BITMAP_H,c - 32,x,y,q,true);
@@ -150,7 +165,7 @@ public class DebugTextRenderer extends DrawComponentBase {
                     indices[fontPos * 5 + 1] = fontPos * 4 + 1;
                     indices[fontPos * 5 + 2] = fontPos * 4 + 2;
                     indices[fontPos * 5 + 3] = fontPos * 4 + 3;
-                    indices[fontPos * 5 + 4] = 0xFFFFFFFF;
+                    indices[fontPos * 5 + 4] = RESTART_INDEX;
                     ++fontPos;
                 }
             }
@@ -164,9 +179,15 @@ public class DebugTextRenderer extends DrawComponentBase {
     public void afterDraw(DrawContextIf context) {
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glUseProgram(0);
         glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE0);
         glDisable(GL_PRIMITIVE_RESTART);
+        //glDisable(GL_BLEND);
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_STENCIL_TEST);
+        glEnable(GL_CULL_FACE);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.esipeng.opengl.engine.base;
 
+import com.esipeng.opengl.engine.shader.DebugTextRenderer;
 import com.esipeng.opengl.engine.spi.DrawComponentIf;
 import com.esipeng.opengl.engine.spi.DrawContextIf;
 import com.esipeng.opengl.engine.spi.DrawableObjectIf;
@@ -17,8 +18,7 @@ import java.util.Map;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.ARBDebugOutput.*;
-import static org.lwjgl.opengl.GL33.glClearColor;
-import static org.lwjgl.opengl.GL33.glEnable;
+import static org.lwjgl.opengl.GL33.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Engine
@@ -36,6 +36,7 @@ public class Engine
     private Camera camera;
     private float previousTime;
     private Matrix4f projection;
+    private DebugTextRenderer debugTextRenderer;
 
     //for FPS
     private float timeElapsed = 0;
@@ -64,6 +65,7 @@ public class Engine
         } else  {
             long monitor = glfwGetPrimaryMonitor();
             GLFWVidMode mode = glfwGetVideoMode(monitor);
+            assert mode != null;
             glfwWindowHint(GLFW_RED_BITS, mode.redBits());
             glfwWindowHint(GLFW_GREEN_BITS, mode.greenBits());
             glfwWindowHint(GLFW_BLUE_BITS, mode.blueBits());
@@ -79,7 +81,7 @@ public class Engine
         camera = new Camera(window);
         GL.createCapabilities();
         glClearColor(0f,0f,0f,1f);
-
+        glViewport(0,0,screenWidth, screenHeight);
         if(debug)
             enableDebug();
 
@@ -104,14 +106,19 @@ public class Engine
                         case GL_DEBUG_SEVERITY_LOW_ARB:
                             logger.info(strMsg);
                             break;
-//                        default:
-//                            logger.info("severity {}, msg {}", severity,strMsg);
-//                            break;
                     }
                 }
             }, 0L);
         } else {
             logger.warn("Debug not supported!");
+        }
+
+        if(debugTextRenderer == null)   {
+            debugTextRenderer = new DebugTextRenderer("debug","font/DejaVuSerif.ttf");
+            if(!debugTextRenderer.init(this))   {
+                logger.warn("DebugTextRenderer init failed!");
+                debugTextRenderer = null;
+            }
         }
     }
 
@@ -201,6 +208,26 @@ public class Engine
             drawComponentIf.draw(this);
             drawComponentIf.afterDraw(this);
         }
+
+        //fps calculation
+        if(debugTextRenderer != null)   {
+            timeElapsed += elapsed;
+            ++frameCount;
+
+            if(timeElapsed > 1f) {
+                float fps = frameCount / timeElapsed;
+                String FPS = String.format("FPS: %.2f", fps);
+                debugTextRenderer.setDebugContent(FPS);
+
+                frameCount = 0;
+                timeElapsed = 0f;
+            }
+
+            debugTextRenderer.beforeDraw(this);
+            debugTextRenderer.draw(this);
+            debugTextRenderer.afterDraw(this);
+        }
+
         glfwSwapBuffers(window);
     }
 
@@ -246,9 +273,8 @@ public class Engine
                         key);
             } else  {
                 //retrieving datum
-                int value = datums.get(key);
                 //logger.debug("Retrieving datum {} from {}", key, value);
-                return value;
+                return datums.get(key);
             }
         }
         return 0;
