@@ -1,7 +1,6 @@
 package com.esipeng.opengl.engine.spi;
 
 import com.esipeng.opengl.engine.base.Mesh;
-import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 public interface DrawableObjectIf extends ReleaseIf {

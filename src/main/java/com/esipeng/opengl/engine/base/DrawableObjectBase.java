@@ -3,7 +3,8 @@ package com.esipeng.opengl.engine.base;
 import com.esipeng.opengl.engine.spi.DrawableObjectIf;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import static com.esipeng.opengl.engine.base.Constants.*;
+
+import static com.esipeng.opengl.engine.base.Constants.VERTEX_MAT_MODEL;
 import static org.lwjgl.opengl.GL33.*;
 
 public abstract class DrawableObjectBase
@@ -119,16 +120,19 @@ public abstract class DrawableObjectBase
     @Override
     public void setPosition(int instanceId, float x, float y, float z) {
         modelData[instanceId].position.set(x, y, z);
+        flushOneInstance(instanceId);
     }
 
     @Override
     public void setPosition(int instanceId, Vector3f position) {
         modelData[instanceId].position.set(position);
+        flushOneInstance(instanceId);
     }
 
     @Override
     public void setScale(int instanceId, float xyz) {
         setScale(instanceId,xyz,xyz,xyz);
+        flushOneInstance(instanceId);
     }
 
     @Override
@@ -136,18 +140,21 @@ public abstract class DrawableObjectBase
         modelData[instanceId].scaleX = x;
         modelData[instanceId].scaleY = y;
         modelData[instanceId].scaleZ = z;
+        flushOneInstance(instanceId);
     }
 
     @Override
     public void setRotate(int instanceId, float radians, Vector3f axis) {
         modelData[instanceId].rotateRadian = radians;
         modelData[instanceId].rotateAxis.set(axis).normalize();
+        flushOneInstance(instanceId);
     }
 
     @Override
     public void setRotate(int instanceId, float radians, float x, float y, float z) {
         modelData[instanceId].rotateRadian = radians;
         modelData[instanceId].rotateAxis.set(x, y, z).normalize();
+        flushOneInstance(instanceId);
     }
 
     @Override
