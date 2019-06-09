@@ -92,12 +92,10 @@ public class PlainInputRenderer extends DrawComponentBase {
     @Override
     public void draw(DrawContextIf context) {
         for(DrawableObjectIf drawableObject : context.getCurrentDrawableObject())   {
-            //update model
-            context.updateModel(drawableObject.getModelMatrix());
             for(Mesh mesh : drawableObject.getMeshes()) {
                 glBindTexture(GL_TEXTURE_2D, mesh.getAmbient());
                 glBindVertexArray(mesh.getVao());
-                glDrawArrays(GL_TRIANGLES, 0, mesh.getVerticesNumber());
+                glDrawArraysInstanced(GL_TRIANGLES, 0, mesh.getVerticesNumber(), drawableObject.getInstances());
             }
         }
     }

@@ -5,10 +5,10 @@ import com.esipeng.opengl.engine.base.Mesh;
 import com.esipeng.opengl.engine.base.TextureLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Arrays;
 import java.util.List;
 
+import static com.esipeng.opengl.engine.base.Constants.*;
 import static org.lwjgl.opengl.GL33.*;
 
 
@@ -17,7 +17,12 @@ public class WoodCube extends DrawableObjectBase {
     private static Logger logger = LoggerFactory.getLogger(WoodCube.class);
 
     private List<Mesh> meshes;
-    protected WoodCube()    {
+    public WoodCube()   {
+        this(1);
+    }
+
+    public WoodCube(int instaceNum)    {
+        super(instaceNum);
         float[] cubeVertices = {
                 // Back face
                 -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, // Bottom-left
@@ -67,12 +72,12 @@ public class WoodCube extends DrawableObjectBase {
         glBindVertexArray(mCubeVAO);
         glBindBuffer(GL_ARRAY_BUFFER,vbo);
         glBufferData(GL_ARRAY_BUFFER,cubeVertices,GL_STATIC_DRAW);
-        glVertexAttribPointer(0,3,GL_FLOAT,false,Float.BYTES*8, 0L);
-        glVertexAttribPointer(1,3,GL_FLOAT,false, Float.BYTES*8, Float.BYTES * 3);
-        glVertexAttribPointer(2,2,GL_FLOAT,false,Float.BYTES*8,Float.BYTES * 6);
-        glEnableVertexAttribArray(0);
-        glEnableVertexAttribArray(1);
-        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(VERTEX_VEC3_POS,3,GL_FLOAT,false,Float.BYTES*8, 0L);
+        glVertexAttribPointer(VERTEX_VEC3_NORMAL,3,GL_FLOAT,false, Float.BYTES*8, Float.BYTES * 3);
+        glVertexAttribPointer(VERTEX_VEC2_TEXCOORD,2,GL_FLOAT,false,Float.BYTES*8,Float.BYTES * 6);
+        glEnableVertexAttribArray(VERTEX_VEC3_POS);
+        glEnableVertexAttribArray(VERTEX_VEC3_NORMAL);
+        glEnableVertexAttribArray(VERTEX_VEC2_TEXCOORD);
         glBindBuffer(GL_ARRAY_BUFFER,0);
         glBindVertexArray(0);
 

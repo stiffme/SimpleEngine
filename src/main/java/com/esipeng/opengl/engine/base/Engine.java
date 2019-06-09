@@ -240,10 +240,10 @@ public class Engine
         return this.world.getAllObjects();
     }
 
-    @Override
-    public void updateModel(Matrix4f model) {
-        mvpManager.updateModel(model);
-    }
+//    @Override
+//    public void updateModel(Matrix4f model) {
+//        mvpManager.updateModel(model);
+//    }
 
     @Override
     public void updateDatum(String key, int value) {

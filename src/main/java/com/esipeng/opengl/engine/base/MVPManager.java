@@ -7,9 +7,9 @@ import static org.lwjgl.opengl.GL15.glGenBuffers;
 import static org.lwjgl.opengl.GL30.glBindBufferBase;
 import static org.lwjgl.opengl.GL31.*;
 
-public class MVPManager {
+class MVPManager {
 
-    private static String MODEL = "model";
+    //private static String MODEL = "model";
     private static String VIEW = "view";
     private static String PROJECTION = "projection";
 
@@ -28,8 +28,8 @@ public class MVPManager {
 
             glBindBufferBase(GL_UNIFORM_BUFFER, MVP_BINDING_POINT, vbo);
 
-            if(!uboManager.setValue(MODEL, model))
-                return false;
+//            if(!uboManager.setValue(MODEL, model))
+//                return false;
 
             if(!uboManager.setValue(VIEW, view))
                 return false;
@@ -46,10 +46,10 @@ public class MVPManager {
         return true;
     }
 
-    public void updateModel(Matrix4f model) {
-        this.model.set(model);
-        uboManager.setValue(MODEL, model);
-    }
+//    public void updateModel(Matrix4f model) {
+//        this.model.set(model);
+//        uboManager.setValue(MODEL, model);
+//    }
 
     public void updateView(Matrix4f view)   {
         this.view.set(view);

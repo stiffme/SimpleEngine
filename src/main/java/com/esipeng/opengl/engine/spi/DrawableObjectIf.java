@@ -15,6 +15,17 @@ public interface DrawableObjectIf extends ReleaseIf {
     void setRotate(float radians, Vector3f axis);
     void setRotate(float radians, float x, float y, float z);
 
-    Matrix4f getModelMatrix();
+    void setInstances(int number);
+    int getInstances();
+    Vector3f getPosition(int instanceId);
+    void setPosition(int instanceId,float x, float y, float z);
+    void setPosition(int instanceId,Vector3f position);
+
+    void setScale(int instanceId,float xyz);
+    void setScale(int instanceId,float x, float y, float z);
+
+    void setRotate(int instanceId,float radians, Vector3f axis);
+    void setRotate(int instanceId,float radians, float x, float y, float z);
+
     Iterable<Mesh> getMeshes();
 }
