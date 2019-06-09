@@ -12,6 +12,7 @@ import com.esipeng.opengl.engine.spi.DrawableObjectIf;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.lwjgl.glfw.GLFW.glfwGetTime;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
 
 public class WoodCubeDemo {
@@ -42,11 +43,12 @@ public class WoodCubeDemo {
 
         if(!engine.initAllComponents())
             return ;
+        //engine.enableProfiling();
         debugWindowsRenderer.setAlpha(0.5f);
 
         World world = new World();
-        DrawableObjectIf woodCube = new WoodCube(NUM_INSTANCE);
-        //woodCube.setInstances(NUM_INSTANCE);
+        DrawableObjectIf woodCube = new WoodCube();
+        woodCube.setInstances(NUM_INSTANCE);
 
         int lenth = (int)Math.sqrt(NUM_INSTANCE);
         float gap = 10.f / lenth;
@@ -63,6 +65,11 @@ public class WoodCubeDemo {
 
         while(!engine.shouldCloseWindow())   {
             glfwPollEvents();
+
+
+            for(int i = 0; i < NUM_INSTANCE; ++i)   {
+                woodCube.setRotate(i, (float)Math.toRadians(i + glfwGetTime() * 200),1.0f,1.0f,1.0f);
+            }
             engine.draw(world);
         }
 

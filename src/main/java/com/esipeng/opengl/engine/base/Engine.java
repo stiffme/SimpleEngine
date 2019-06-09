@@ -5,13 +5,19 @@ import com.esipeng.opengl.engine.spi.DrawComponentIf;
 import com.esipeng.opengl.engine.spi.DrawContextIf;
 import com.esipeng.opengl.engine.spi.DrawableObjectIf;
 import org.joml.Matrix4f;
+import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.opengl.GLDebugMessageARBCallback;
+import org.lwjgl.util.remotery.Remotery;
+import org.lwjgl.util.remotery.RemoteryGL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static org.lwjgl.util.remotery.Remotery.*;
+import static org.lwjgl.util.remotery.RemoteryGL.*;
 
+import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -37,6 +43,8 @@ public class Engine
     private float previousTime;
     private Matrix4f projection;
     private DebugTextRenderer debugTextRenderer;
+    private PointerBuffer remotery = null;
+    private IntBuffer remoteryHashCode = null;
 
     //for FPS
     private float timeElapsed = 0;
@@ -122,6 +130,17 @@ public class Engine
         }
     }
 
+    public void enableProfiling()   {
+        if(remotery == null)    {
+            remotery = PointerBuffer.allocateDirect(1);
+            Remotery.rmt_CreateGlobalInstance(remotery);
+            glfwSwapInterval(0);
+            rmt_BindOpenGL();
+            remoteryHashCode = IntBuffer.allocate(1);
+
+        }
+    }
+
     public int getScreenWidth() {
         return screenWidth;
     }
@@ -194,6 +213,11 @@ public class Engine
         float elapsed = currentT - previousTime;
         previousTime = currentT;
 
+        //Profiling
+        if(remotery != null)    {
+            rmt_BeginOpenGLSample("Simple Engine",remoteryHashCode);
+        }
+
         camera.processInput(elapsed);
         //set view
         mvpManager.updateView(camera.generateViewMat());
@@ -229,6 +253,7 @@ public class Engine
         }
 
         glfwSwapBuffers(window);
+        rmt_EndOpenGLSample();
     }
 
     public boolean shouldCloseWindow()  {
@@ -281,6 +306,9 @@ public class Engine
     }
 
     public void release()   {
+        if(remotery != null)
+            rmt_UnbindOpenGL();
+
         for(DrawComponentIf drawComponentIf : components)   {
             drawComponentIf.release();
         }
