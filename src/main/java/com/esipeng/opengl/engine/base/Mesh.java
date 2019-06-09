@@ -7,6 +7,8 @@ public class Mesh {
     private int specular;
     private int normal;
     private int verticesNumber;
+    private float shininess;
+    private boolean useIndices;
 
     public int getVerticesNumber() {
         return verticesNumber;
@@ -26,6 +28,14 @@ public class Mesh {
 
     public int getSpecular() {
         return specular;
+    }
+
+    public float getShininess() {
+        return shininess;
+    }
+
+    public boolean isUseIndices() {
+        return useIndices;
     }
 
     public int getNormal() {
@@ -59,5 +69,12 @@ public class Mesh {
         this.specular = specular;
         this.normal = normal;
         this.verticesNumber = verticesNumber;
+    }
+
+    public Mesh(int vao, int ambient, int diffuse, int specular, int normal, int verticesNumber,
+                float shininess, boolean useIndices) {
+        this(vao, ambient, diffuse, specular, normal, verticesNumber);
+        this.shininess = shininess;
+        this.useIndices =useIndices;
     }
 }

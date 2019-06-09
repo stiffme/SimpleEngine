@@ -14,6 +14,7 @@ import static org.lwjgl.opengl.GL33.*;
 public class PlainInputRenderer extends DrawComponentBase {
 
     private static final int AMBIENT_TEX = 8;
+    private static final int DIFFUSE_TEX = 9;
 
     private String output;
     private int outputTexture, fbo;
@@ -43,6 +44,9 @@ public class PlainInputRenderer extends DrawComponentBase {
         glUniformBlockBinding(program, mvpLoc, MVP_BINDING_POINT);
 
         if(!setUniform1i(program, "ambient", AMBIENT_TEX))
+            return false;
+
+        if(!setUniform1i(program, "diffuse", DIFFUSE_TEX))
             return false;
 
         //create fbo texture
@@ -83,7 +87,6 @@ public class PlainInputRenderer extends DrawComponentBase {
         glUseProgram(program);
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        glActiveTexture(GL_TEXTURE0 + AMBIENT_TEX);
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
         glEnable(GL_STENCIL_TEST);
@@ -93,9 +96,17 @@ public class PlainInputRenderer extends DrawComponentBase {
     public void draw(DrawContextIf context) {
         for(DrawableObjectIf drawableObject : context.getCurrentDrawableObject())   {
             for(Mesh mesh : drawableObject.getMeshes()) {
+                glActiveTexture(GL_TEXTURE0 + AMBIENT_TEX);
                 glBindTexture(GL_TEXTURE_2D, mesh.getAmbient());
+
+                glActiveTexture(GL_TEXTURE0 + DIFFUSE_TEX);
+                glBindTexture(GL_TEXTURE_2D, mesh.getDiffuse());
+
                 glBindVertexArray(mesh.getVao());
-                glDrawArraysInstanced(GL_TRIANGLES, 0, mesh.getVerticesNumber(), drawableObject.getInstances());
+                if(mesh.isUseIndices())
+                    glDrawElementsInstanced(GL_TRIANGLES, mesh.getVerticesNumber(), GL_UNSIGNED_INT, 0L,drawableObject.getInstances());
+                else
+                    glDrawArraysInstanced(GL_TRIANGLES, 0, mesh.getVerticesNumber(), drawableObject.getInstances());
             }
         }
     }
