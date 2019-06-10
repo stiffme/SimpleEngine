@@ -85,6 +85,12 @@ class Camera {
         }
     }
 
+    public void disableMouseFpsView()   {
+        glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        glfwSetCursorPosCallback(m_window,null);
+        glfwSetScrollCallback(m_window, null);
+    }
+
     public void enableMouseFpsView()    {
         glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         glfwSetCursorPosCallback(m_window, new GLFWCursorPosCallback() {

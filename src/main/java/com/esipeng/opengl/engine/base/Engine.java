@@ -7,15 +7,14 @@ import com.esipeng.opengl.engine.spi.DrawableObjectIf;
 import org.joml.Matrix4f;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVidMode;
+import org.lwjgl.glfw.GLFWWindowSizeCallback;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.opengl.GLDebugMessageARBCallback;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.remotery.Remotery;
-import org.lwjgl.util.remotery.RemoteryGL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static org.lwjgl.util.remotery.Remotery.*;
-import static org.lwjgl.util.remotery.RemoteryGL.*;
 
 import java.nio.IntBuffer;
 import java.util.HashMap;
@@ -26,6 +25,7 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.ARBDebugOutput.*;
 import static org.lwjgl.opengl.GL33.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
+import static org.lwjgl.util.remotery.RemoteryGL.*;
 
 public class Engine
         extends ManagedObject
@@ -34,7 +34,7 @@ public class Engine
 
     private LinkedList<DrawComponentIf> components;
     private Map<String, Integer> datums;
-    private int screenWidth, screenHeight;
+    private int screenWidth, screenHeight, windowedWidth,windowedHeight, windowedRefreshRate, windowedPosX, windowedPosY;
     private DrawComponentIf currentComponent;
     private long window;
     private World world;
@@ -45,16 +45,16 @@ public class Engine
     private DebugTextRenderer debugTextRenderer;
     private PointerBuffer remotery = null;
     private IntBuffer remoteryHashCode = null;
+    private boolean f12Pressed = false;
 
     //for FPS
     private float timeElapsed = 0;
     private int frameCount = 0;
 
     public Engine(int width, int height)    {
-        this.screenHeight = height;
-        this.screenWidth = width;
+        this.screenHeight =  this.windowedHeight = height;
+        this.screenWidth = this.windowedWidth = width;
         components = new LinkedList<>();
-        mvpManager = new MVPManager();
         projection = new Matrix4f();
     }
 
@@ -68,12 +68,15 @@ public class Engine
         if(debug)
             glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
 
+
+        long monitor = glfwGetPrimaryMonitor();
+        GLFWVidMode mode = glfwGetVideoMode(monitor);
+        assert mode != null;
+        this.windowedRefreshRate = mode.refreshRate();
+
         if(!fullScreen) {
             window = glfwCreateWindow(screenWidth, screenHeight,"Simple Engine", NULL, NULL);
         } else  {
-            long monitor = glfwGetPrimaryMonitor();
-            GLFWVidMode mode = glfwGetVideoMode(monitor);
-            assert mode != null;
             glfwWindowHint(GLFW_RED_BITS, mode.redBits());
             glfwWindowHint(GLFW_GREEN_BITS, mode.greenBits());
             glfwWindowHint(GLFW_BLUE_BITS, mode.blueBits());
@@ -82,6 +85,7 @@ public class Engine
             screenHeight = mode.height();
             window = glfwCreateWindow(screenWidth, screenHeight,"Simple Engine", monitor, NULL);
         }
+
         if(window == NULL)
             throw new RuntimeException("Window is not created!");
 
@@ -92,7 +96,6 @@ public class Engine
         glViewport(0,0,screenWidth, screenHeight);
         if(debug)
             enableDebug();
-
     }
 
     private void enableDebug()  {
@@ -165,15 +168,32 @@ public class Engine
 
         datums = new HashMap<>();
 
+        if(!initializeComponents())
+            return false;
+        //add resize handler
+        glfwSetWindowSizeCallback(window, new GLFWWindowSizeCallback() {
+            @Override
+            public void invoke(long window, int width, int height) {
+                Engine.this.screenHeight = height;
+                Engine.this.screenWidth = width;
+                initializeComponents();
+                glViewport(0,0,width,height);
+            }
+        });
+        //validate
+        return validateChain();
+    }
+
+    private boolean initializeComponents()  {
         //first initialize all the components
         for(DrawComponentIf drawComponentIf : components)   {
+            drawComponentIf.release();
             if(!drawComponentIf.init(this))
                 return false;
         }
 
         previousTime = (float)glfwGetTime();
-        //validate
-        return validateChain();
+        return true;
     }
 
     /**
@@ -203,10 +223,47 @@ public class Engine
         return true;
     }
 
+    private void toggleFullscreen() {
+        if(glfwGetWindowMonitor(window) != NULL)    {
+            //to windowed mode
+            glfwSetWindowMonitor(window, NULL, windowedPosX, windowedPosY, windowedWidth, windowedHeight, windowedRefreshRate);
+            camera.disableMouseFpsView();
+        } else  {
+            //to full screen rate
+            try(MemoryStack stack = MemoryStack.stackPush()) {
+                IntBuffer i1 = stack.callocInt(1);
+                IntBuffer i2 = stack.callocInt(2);
+                glfwGetWindowPos(window,i1, i2);
+                windowedPosX = i1.get(0);
+                windowedPosY = i2.get(0);
+                glfwGetWindowSize(window,i1, i2);
+                windowedWidth = i1.get(0);
+                windowedHeight = i2.get(0);
+            }
+
+            long monitor = glfwGetPrimaryMonitor();
+            if(monitor != NULL) {
+                GLFWVidMode mode = glfwGetVideoMode(monitor);
+                glfwSetWindowMonitor(window, monitor, 0, 0, mode.width(), mode.height(), mode.refreshRate());
+                camera.enableMouseFpsView();
+            }
+        }
+    }
+
     public void draw(World world) {
         //check if ESC is pressed
         if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             glfwSetWindowShouldClose(window, true);
+        //check if F12 is pressed
+        if(glfwGetKey(window, GLFW_KEY_F12) == GLFW_PRESS)
+            this.f12Pressed = true;
+        if(glfwGetKey(window, GLFW_KEY_F12) == GLFW_RELEASE) {
+            if(f12Pressed)  {
+                toggleFullscreen();
+                f12Pressed = false;
+            }
+
+        }
 
         this.world = world;
         float currentT = (float)glfwGetTime();
@@ -331,7 +388,7 @@ public class Engine
             e.printStackTrace();
             return false;
         }
-
+        mvpManager = new MVPManager();
         return mvpManager.bindProgram(dummyProgram);
     }
 }
