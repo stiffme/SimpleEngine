@@ -9,17 +9,24 @@ layout (location = 3) out vec4 gAlbedoSpec;
 in VS_OUT{
     vec3 FragPos;
     vec2 Texcoords;
-    vec3 Normal;
+    mat3 TBN;
+    //vec3 testNormal;
 } fs_in;
 
 uniform sampler2D texAmbient;
 uniform sampler2D texDiffuse;
 uniform sampler2D texSpecular;
+uniform sampler2D texNormal;
+
 uniform float shininess;
 
 void main() {
     gPosition = fs_in.FragPos;
-    gNormal.rgb = normalize(fs_in.Normal.rgb);
+
+    //texture is from 0 to 2, map it to -1, 1
+    vec3 normalInTangent = normalize(texture(texNormal, fs_in.Texcoords).rgb * 2f - 1f);
+
+    gNormal.rgb = normalize(fs_in.TBN * normalInTangent);
     gNormal.a = shininess ;
 
     gAmbient = texture(texAmbient, fs_in.Texcoords).rgb;

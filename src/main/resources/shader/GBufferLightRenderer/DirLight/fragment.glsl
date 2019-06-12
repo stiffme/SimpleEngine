@@ -24,7 +24,8 @@ uniform ViewPos {
 
 void main() {
     vec3 FragPos = texture(GPosition, texCoord).rgb;
-    vec3 normal = normalize(texture(GNormal, texCoord).rgb);
+    vec4 gNormal = texture(GNormal, texCoord);
+    vec3 normal = normalize(gNormal.rgb);
 
     vec4 ambientShininess = texture(GAmbient, texCoord);
 
@@ -40,10 +41,13 @@ void main() {
     vec3 diffuse = diff * light.lDiffuse * Mdiffuse;
 
     //specular
-    vec3 reflectDir = reflect(light.lightDir, normal);
+    //vec3 reflectDir = reflect(light.lightDir, normal);
+
     vec3 viewDir = normalize(viewPos - FragPos);
-    float shininess = ambientShininess.a;
-    float spec = pow(max(dot(reflectDir, viewDir), 0.0), shininess);
+    vec3 halhplane = normalize(viewDir - light.lightDir);
+
+    float shininess = gNormal.a;
+    float spec = pow(max(dot(halhplane, normal), 0.0), shininess );
     vec3 specular = spec * light.lSpecular * Mspecular;
 
     oColor = vec4(ambient + diffuse   + specular  , 1.0);

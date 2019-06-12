@@ -20,7 +20,7 @@ uniform MVP {
 
 
 void main() {
-    vs_out.FragPos = aModel * vec4(aPos, 1.0);
+    vs_out.FragPos = vec3(aModel * vec4(aPos, 1.0));
     vs_out.Texcoords = aTexcoord;
     mat3 normalMatrix = transpose(inverse(mat3(aModel))) ;
     vec3 N = normalize(normalMatrix * aNormal);

@@ -93,6 +93,9 @@ public class ModelImporter extends DrawableObjectBase {
             int aiMaterialIndex = aiMesh.mMaterialIndex();
             AIMaterial aiMaterial = AIMaterial.create(aiScene.mMaterials().get(aiMaterialIndex));
             float shininess = queryMaterialFloat(aiMaterial,AI_MATKEY_SHININESS, 0.f);
+            if(queryMaterialInt(aiMaterial,AI_MATKEY_SHADING_MODEL,aiShadingMode_Phong) == aiShadingMode_Phong)
+                shininess *= 8;
+
 
             int ambientTexture = loadOneTexture(aiMaterial, aiTextureType_AMBIENT);
             int diffuseTexture = loadOneTexture(aiMaterial, aiTextureType_DIFFUSE);
@@ -100,6 +103,7 @@ public class ModelImporter extends DrawableObjectBase {
             int normalTexture = loadOneTexture(aiMaterial, aiTextureType_NORMALS);
             if(normalTexture == 0)  {
                 normalTexture = loadOneTexture(aiMaterial, aiTextureType_HEIGHT);
+                logger.debug("Using height texture as normal texture {}", normalTexture);
             }
 
             //build VAO
@@ -229,6 +233,23 @@ public class ModelImporter extends DrawableObjectBase {
             return defaultValue;
         } else
             return floatBuf[0];
+    }
+
+    private float queryMaterialInt(AIMaterial aiMaterial, String aiMatKey, int defaultValue)    {
+        int[] intBuf = new int[1];
+        int[] bufSize = new int[1];
+        bufSize[0] = 1;
+        int ret = aiGetMaterialIntegerArray(aiMaterial,
+                aiMatKey,
+                aiTextureType_NONE,
+                0,
+                intBuf,
+                bufSize);
+        if(ret != aiReturn_SUCCESS) {
+            logger.warn("Getting {} aiMaterial float failed, returning default value", aiMatKey);
+            return defaultValue;
+        } else
+            return intBuf[0];
     }
 
     private int mapAiMapModeToGL(int mapMode)   {

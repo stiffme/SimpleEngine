@@ -12,7 +12,7 @@ import static org.lwjgl.opengl.GL33.*;
 
 public class GBufferInputRenderer extends DrawComponentBase {
 
-    private static final int AMBIENT_TEX = 1, DIFFUSE_TEX = 2, SPECULAR_TEX = 3;
+    private static final int AMBIENT_TEX = 1, DIFFUSE_TEX = 2, SPECULAR_TEX = 3, NORMAL_TEX = 4;
 
     private int noNormalMapProgram, normalMapProgram;
     private int fbo, texPosition, texNormal,texAmbient,texAlbedoSpec;
@@ -43,6 +43,17 @@ public class GBufferInputRenderer extends DrawComponentBase {
             if(!setTextureId(noNormalMapProgram))
                 return false;
 
+            normalMapProgram = compileAndLinkProgram(
+                    "shader/GBufferInputRenderer/vertex_normal_map.glsl",
+                    "shader/GBufferInputRenderer/fragment_normal_map.glsl"
+            );
+
+            mvpLoc = glGetUniformBlockIndex(normalMapProgram,"MVP");
+            glUniformBlockBinding(normalMapProgram, mvpLoc, MVP_BINDING_POINT);
+
+            if(!setTextureIdExt(normalMapProgram))
+                return false;
+
         } catch (Exception e)   {
             e.printStackTrace();
             return false;
@@ -50,9 +61,9 @@ public class GBufferInputRenderer extends DrawComponentBase {
 
         //high precision for position and normal
         texPosition = createTextureForFrameBuffer(GL_RGB16F, GL_RGB, context);
-        texNormal = createTextureForFrameBuffer(GL_RGB16F,GL_RGB, context);
+        texNormal = createTextureForFrameBuffer(GL_RGBA16F,GL_RGBA, context);
 
-        texAmbient = createTextureForFrameBuffer(GL_RGBA,GL_RGBA,context);
+        texAmbient = createTextureForFrameBuffer(GL_RGB,GL_RGB,context);
         //vec4 for albedo spec
         texAlbedoSpec = createTextureForFrameBuffer(GL_RGBA, GL_RGBA, context);
 
@@ -103,6 +114,17 @@ public class GBufferInputRenderer extends DrawComponentBase {
         return true;
     }
 
+    private boolean setTextureIdExt(int program)    {
+        if(!setTextureId(program))
+            return false;
+
+        setUniform1i(program,"texNormal", NORMAL_TEX);
+//        if(!setUniform1i(program,"texNormal", NORMAL_TEX))
+//            return false;
+
+        return true;
+    }
+
     private int createTextureForFrameBuffer(int internalFormat, int format, DrawContextIf context) {
         int tex = getManagedTexture();
         glBindTexture(GL_TEXTURE_2D, tex);
@@ -117,12 +139,12 @@ public class GBufferInputRenderer extends DrawComponentBase {
 
     @Override
     public void beforeDraw(DrawContextIf context) {
-        glUseProgram(noNormalMapProgram);
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
         glEnable(GL_CULL_FACE);
         glDisable(GL_STENCIL_TEST);
         glBindFramebuffer(GL_FRAMEBUFFER,0);
+        glClearColor(0f,0f,0f,0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         glBindFramebuffer(GL_FRAMEBUFFER,fbo);
@@ -133,7 +155,16 @@ public class GBufferInputRenderer extends DrawComponentBase {
     public void draw(DrawContextIf context) {
         for(DrawableObjectIf drawableObject : context.getWorld().getAllObjects())   {
             for(Mesh mesh : drawableObject.getMeshes()) {
+                if(mesh.getNormal() != 0)   {
+                    glUseProgram(normalMapProgram);
+                    setUniform1f(normalMapProgram,"shininess", mesh.getShininess());
 
+                    glActiveTexture(GL_TEXTURE0 + NORMAL_TEX);
+                    glBindTexture(GL_TEXTURE_2D, mesh.getNormal());
+                } else  {
+                    glUseProgram(noNormalMapProgram);
+                    setUniform1f(noNormalMapProgram,"shininess", mesh.getShininess());
+                }
                 glActiveTexture(GL_TEXTURE0 + AMBIENT_TEX);
                 glBindTexture(GL_TEXTURE_2D, mesh.getAmbient());
 
@@ -142,9 +173,6 @@ public class GBufferInputRenderer extends DrawComponentBase {
 
                 glActiveTexture(GL_TEXTURE0 + SPECULAR_TEX);
                 glBindTexture(GL_TEXTURE_2D, mesh.getSpecular());
-
-                setUniform1f(noNormalMapProgram,"shininess", mesh.getShininess());
-                //setUniform1f(normalMapProgram,"shininess", mesh.getShininess());
 
                 glBindVertexArray(mesh.getVao());
                 if(mesh.isUseIndices())
