@@ -7,7 +7,7 @@ public class Mesh {
     private int specular;
     private int normal;
     private int verticesNumber;
-    private float shininess;
+    private float shininess = 1.0f;
     private boolean useIndices;
 
     public int getVerticesNumber() {

@@ -3,7 +3,6 @@ package com.esipeng.opengl.engine.base;
 import com.esipeng.opengl.engine.shader.DebugTextRenderer;
 import com.esipeng.opengl.engine.spi.DrawComponentIf;
 import com.esipeng.opengl.engine.spi.DrawContextIf;
-import com.esipeng.opengl.engine.spi.DrawableObjectIf;
 import org.joml.Matrix4f;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -46,6 +45,7 @@ public class Engine
     private PointerBuffer remotery = null;
     private IntBuffer remoteryHashCode = null;
     private boolean f12Pressed = false;
+    private UBOManager viewPosUboManager;
 
     //for FPS
     private float timeElapsed = 0;
@@ -278,6 +278,8 @@ public class Engine
         camera.processInput(elapsed);
         //set view
         mvpManager.updateView(camera.generateViewMat());
+        //update view pos
+        viewPosUboManager.setValue("viewPos", camera.getCameraPos());
         //set projection
         projection.setPerspective(camera.getFovRadians(),(float)screenWidth/screenHeight,0.1f,100f);
         mvpManager.updateProjection(projection);
@@ -318,11 +320,11 @@ public class Engine
     }
 
     @Override
-    public Iterable<DrawableObjectIf> getCurrentDrawableObject() {
-        return this.world.getAllObjects();
+    public World getWorld() {
+        return world;
     }
 
-//    @Override
+    //    @Override
 //    public void updateModel(Matrix4f model) {
 //        mvpManager.updateModel(model);
 //    }
@@ -389,6 +391,20 @@ public class Engine
             return false;
         }
         mvpManager = new MVPManager();
-        return mvpManager.bindProgram(dummyProgram);
+        if(!mvpManager.bindProgram(dummyProgram))
+            return false;
+        Constants.LIGHT_UBO_MANAGER = new UBOManager();
+        int lightUbo = getManagedVBO();
+
+        if(!Constants.LIGHT_UBO_MANAGER.attachUniformBlock(dummyProgram,"Light", lightUbo))
+            return false;
+
+        viewPosUboManager = new UBOManager();
+        int viewPosUbo = getManagedVBO();
+        if(!viewPosUboManager.attachUniformBlock(dummyProgram,"ViewPos",viewPosUbo))
+            return false;
+        glBindBufferBase(GL_UNIFORM_BUFFER, Constants.VIEW_POS_BINDING_POINT, viewPosUbo);
+
+        return true;
     }
 }

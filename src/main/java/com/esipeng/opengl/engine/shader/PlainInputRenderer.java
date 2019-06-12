@@ -94,7 +94,7 @@ public class PlainInputRenderer extends DrawComponentBase {
 
     @Override
     public void draw(DrawContextIf context) {
-        for(DrawableObjectIf drawableObject : context.getCurrentDrawableObject())   {
+        for(DrawableObjectIf drawableObject : context.getWorld().getAllObjects())   {
             for(Mesh mesh : drawableObject.getMeshes()) {
                 glActiveTexture(GL_TEXTURE0 + AMBIENT_TEX);
                 glBindTexture(GL_TEXTURE_2D, mesh.getAmbient());

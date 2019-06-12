@@ -2,7 +2,7 @@
 
 layout (location = 0) out vec3 gPosition;
 layout (location = 1) out vec3 gNormal;
-layout (location = 2) out vec3 gAmbient;
+layout (location = 2) out vec4 gAmbient;
 layout (location = 3) out vec4 gAlbedoSpec;
 
 
@@ -15,12 +15,13 @@ in VS_OUT{
 uniform sampler2D texAmbient;
 uniform sampler2D texDiffuse;
 uniform sampler2D texSpecular;
-
+uniform float shininess;
 
 void main() {
     gPosition = fs_in.FragPos;
     gNormal = normalize(fs_in.Normal);
-    gAmbient = texture(texAmbient, fs_in.Texcoords).rgb;
+    gAmbient.rgb = texture(texAmbient, fs_in.Texcoords).rgb;
+    gAmbient.a = shininess;
     gAlbedoSpec.rgb = texture(texDiffuse, fs_in.Texcoords).rgb;
     gAlbedoSpec.a = texture(texSpecular, fs_in.Texcoords).r;
 }

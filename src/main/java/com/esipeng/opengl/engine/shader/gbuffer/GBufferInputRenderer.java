@@ -1,4 +1,4 @@
-package com.esipeng.opengl.engine.shader;
+package com.esipeng.opengl.engine.shader.gbuffer;
 
 import com.esipeng.opengl.engine.base.DrawComponentBase;
 import com.esipeng.opengl.engine.base.Mesh;
@@ -52,7 +52,7 @@ public class GBufferInputRenderer extends DrawComponentBase {
         texPosition = createTextureForFrameBuffer(GL_RGB16F, GL_RGB, context);
         texNormal = createTextureForFrameBuffer(GL_RGB16F,GL_RGB, context);
 
-        texAmbient = createTextureForFrameBuffer(GL_RGB,GL_RGB,context);
+        texAmbient = createTextureForFrameBuffer(GL_RGBA,GL_RGBA,context);
         //vec4 for albedo spec
         texAlbedoSpec = createTextureForFrameBuffer(GL_RGBA, GL_RGBA, context);
 
@@ -122,13 +122,16 @@ public class GBufferInputRenderer extends DrawComponentBase {
         glDisable(GL_BLEND);
         glEnable(GL_CULL_FACE);
         glDisable(GL_STENCIL_TEST);
+        glBindFramebuffer(GL_FRAMEBUFFER,0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
         glBindFramebuffer(GL_FRAMEBUFFER,fbo);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     }
 
     @Override
     public void draw(DrawContextIf context) {
-        for(DrawableObjectIf drawableObject : context.getCurrentDrawableObject())   {
+        for(DrawableObjectIf drawableObject : context.getWorld().getAllObjects())   {
             for(Mesh mesh : drawableObject.getMeshes()) {
 
                 glActiveTexture(GL_TEXTURE0 + AMBIENT_TEX);
@@ -139,6 +142,9 @@ public class GBufferInputRenderer extends DrawComponentBase {
 
                 glActiveTexture(GL_TEXTURE0 + SPECULAR_TEX);
                 glBindTexture(GL_TEXTURE_2D, mesh.getSpecular());
+
+                setUniform1f(noNormalMapProgram,"shininess", mesh.getShininess());
+                //setUniform1f(normalMapProgram,"shininess", mesh.getShininess());
 
                 glBindVertexArray(mesh.getVao());
                 if(mesh.isUseIndices())

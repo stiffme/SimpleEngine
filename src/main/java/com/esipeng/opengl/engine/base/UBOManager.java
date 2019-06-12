@@ -19,7 +19,6 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 public class UBOManager {
     private static Logger logger = LoggerFactory.getLogger(UBOManager.class);
 
-    private int m_blockIndex = -1;
     private class UniformInformation    {
         private int blockOffset, blockSizeInBytes;
 
@@ -36,24 +35,35 @@ public class UBOManager {
             return blockSizeInBytes;
         }
     }
-    int m_ubo;
-    HashMap<String, UniformInformation> m_indices;
-    float[] temp1 = new float[1], temp2 = new float[2], temp3 = new float[3], temp4 = new float[4];
-    float[] temp16 = new float[16];
+    private int m_ubo, m_dataSize;
+    private HashMap<String, UniformInformation> m_indices;
+    private float[] temp1 = new float[1], temp2 = new float[2], temp3 = new float[3], temp4 = new float[4];
+    private float[] temp16 = new float[16];
 
-    public int getBlockIndex()  {
-        return m_blockIndex;
+    public UBOManager() {
+
     }
+
+    public UBOManager(UBOManager that, int ubo) {
+        this.m_ubo = ubo;
+        this.m_indices = that.m_indices;
+        this.m_dataSize = that.m_dataSize;
+        glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+        glBufferData(GL_UNIFORM_BUFFER, m_dataSize, GL_STATIC_DRAW);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    }
+
+
     public boolean attachUniformBlock(int program, String uniformBlockName, int ubo) {
         int blockIndex = glGetUniformBlockIndex(program,uniformBlockName);
         if(blockIndex == -1)    {
             return false;
         }
-        m_blockIndex = blockIndex;
         m_ubo = ubo;
 
         int dataSize = glGetActiveUniformBlocki(program, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE);
         logger.debug("block index {} size is {}", uniformBlockName, dataSize);
+        this.m_dataSize = dataSize;
 
         //allocate UBO
         glBindBuffer(GL_UNIFORM_BUFFER, m_ubo);
