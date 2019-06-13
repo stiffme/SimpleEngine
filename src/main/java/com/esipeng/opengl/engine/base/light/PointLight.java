@@ -57,5 +57,6 @@ public class PointLight extends AbstractLight {
         float delta = (float)Math.sqrt(linear * linear - 4 * quadratic * (constant - 256 * maxIntense));
         float ret = (-linear + delta) / (2 * quadratic);
         return ret;
+        //return 2;
     }
 }

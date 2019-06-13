@@ -17,6 +17,15 @@ public class GBufferInputRenderer extends DrawComponentBase {
     private int noNormalMapProgram, normalMapProgram;
     private int fbo, texPosition, texNormal,texAmbient,texAlbedoSpec;
 
+    private int[] drawBuffers = new int[]{
+            GL_COLOR_ATTACHMENT0,
+            GL_COLOR_ATTACHMENT1,
+            GL_COLOR_ATTACHMENT2,
+            GL_COLOR_ATTACHMENT3,
+            GL_COLOR_ATTACHMENT4
+    };
+
+    private int[] outputDrawBuffers = new int[] {GL_COLOR_ATTACHMENT0};
 
     public GBufferInputRenderer(String name) {
         super(name,
@@ -60,6 +69,7 @@ public class GBufferInputRenderer extends DrawComponentBase {
         }
 
         //high precision for position and normal
+        int texColor = createTextureForFrameBuffer(GL_RGBA, GL_RGBA, context);
         texPosition = createTextureForFrameBuffer(GL_RGB16F, GL_RGB, context);
         texNormal = createTextureForFrameBuffer(GL_RGBA16F,GL_RGBA, context);
 
@@ -75,17 +85,12 @@ public class GBufferInputRenderer extends DrawComponentBase {
 //        layout (location = 2) out vec3 gAmbient;
 //        layout (location = 3) out vec4 gAlbedoSpec;
 
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texPosition, 0);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, texNormal, 0);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, texAmbient, 0);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, texAlbedoSpec, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texColor, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, texPosition, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, texNormal, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, texAmbient, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, texAlbedoSpec, 0);
 
-        int[] drawBuffers = new int[]{
-                GL_COLOR_ATTACHMENT0,
-                GL_COLOR_ATTACHMENT1,
-                GL_COLOR_ATTACHMENT2,
-                GL_COLOR_ATTACHMENT3
-        };
         glDrawBuffers(drawBuffers);
 
         //for depth/stencil
@@ -143,13 +148,13 @@ public class GBufferInputRenderer extends DrawComponentBase {
         glDepthMask(true);
         glDisable(GL_BLEND);
         glEnable(GL_CULL_FACE);
-        glEnable(GL_STENCIL_TEST);
-        glBindFramebuffer(GL_FRAMEBUFFER,0);
+        glDisable(GL_STENCIL_TEST);
         glClearColor(0f,0f,0f,0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         glBindFramebuffer(GL_FRAMEBUFFER,fbo);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        glDrawBuffers(drawBuffers);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
     }
 
     @Override
@@ -197,7 +202,8 @@ public class GBufferInputRenderer extends DrawComponentBase {
         context.updateDatum(GBUFFER_AMBIENT,texAmbient);
         context.updateDatum(GBUFFER_ALBEDOSPEC,texAlbedoSpec);
         context.updateDatum(GBUFFER_FBO,fbo);
-
+        //restrict to tex color buffer
+        glDrawBuffers(outputDrawBuffers);
 
         glUseProgram(0);
         glDisable(GL_DEPTH_TEST);

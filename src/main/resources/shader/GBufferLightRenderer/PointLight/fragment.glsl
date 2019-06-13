@@ -59,6 +59,6 @@ void main() {
     float spec = pow(max(dot(halhplane, normal), 0.0), shininess );
     vec3 specular = attenuation * spec * light.lSpecular * Mspecular;
 
-    oColor = vec4(ambient  + diffuse    + specular  , 1.0);
+    oColor = vec4(ambient   + diffuse    + specular  , 1.0);
 
 }

@@ -7,8 +7,7 @@ import com.esipeng.opengl.engine.base.light.PointLight;
 import com.esipeng.opengl.engine.importer.ModelImporter;
 import com.esipeng.opengl.engine.importer.NormalBrick;
 import com.esipeng.opengl.engine.shader.DebugWindowsRenderer;
-import com.esipeng.opengl.engine.shader.OutputScreen;
-import com.esipeng.opengl.engine.shader.gbuffer.GBufferCompositor;
+import com.esipeng.opengl.engine.shader.OutputScreenFBO;
 import com.esipeng.opengl.engine.shader.gbuffer.GBufferDirLightRenderer;
 import com.esipeng.opengl.engine.shader.gbuffer.GBufferInputRenderer;
 import com.esipeng.opengl.engine.shader.gbuffer.GBufferPointLightRenderer;
@@ -34,12 +33,12 @@ public class NanosuitDemoDeferred {
                 "GBuffer"
         );
 
-        DrawComponentIf gBufferCompositor = new GBufferCompositor("compositor");
+        //DrawComponentIf gBufferCompositor = new GBufferCompositor("compositor");
 
         DrawComponentIf gbufferDirLightRenderer = new GBufferDirLightRenderer("Direction");
-        DrawComponentIf gbufferPointLightRenderer = new GBufferPointLightRenderer("Point");
+        DrawComponentIf gbufferPointLightRenderer = new GBufferPointLightRenderer("Point",false);
 
-        DrawComponentIf outputScreen = new OutputScreen("screen", GBUFFER_COMPOSITOR_TEXTURE);
+        DrawComponentIf outputScreen = new OutputScreenFBO("screen", GBUFFER_FBO);
 
         List<String> debugDatums = new LinkedList<>();
         debugDatums.add(GBUFFER_POSITION);
@@ -50,7 +49,7 @@ public class NanosuitDemoDeferred {
 
         //engine.addDrawComponent(plainInputRenderer).addDrawComponent(outputScreen);
         engine.addDrawComponent(gBufferRenderer)
-                .addDrawComponent(gBufferCompositor)
+                //.addDrawComponent(gBufferCompositor)
                 .addDrawComponent(gbufferDirLightRenderer)
                 .addDrawComponent(gbufferPointLightRenderer)
                 .addDrawComponent(outputScreen)
@@ -85,25 +84,34 @@ public class NanosuitDemoDeferred {
         wall2.setPosition(1,0,-1);
         world.addObject(wall1);
         world.addObject(wall2);
-        DirectionalLight dirLight = new DirectionalLight(new Vector3f(0.0f),
-                new Vector3f(0.5f,0,0),
+        DirectionalLight dirLight = new DirectionalLight(new Vector3f(10.0f),
+                new Vector3f(10),
                 new Vector3f(0.2f),
                 new Vector3f(1,0,-1));
 
-        DirectionalLight dirLight2 = new DirectionalLight(new Vector3f(0.0f),
-                new Vector3f(0,0.5f,0),
-                new Vector3f(0.2f),
+        DirectionalLight dirLight2 = new DirectionalLight(new Vector3f(1.0f),
+                new Vector3f(1,1.1f,1),
+                new Vector3f(1f),
                 new Vector3f(-1,0,-1));
         //world.addDirLight(dirLight);
         //world.addDirLight(dirLight2);
         PointLight pointLight = new PointLight(
-                new Vector3f(0.4f),
-                new Vector3f(10),
-                new Vector3f(10),
-                new Vector3f(0.5f,0.5f,2f),
+                new Vector3f(1f),
+                new Vector3f(1),
+                new Vector3f(1),
+                new Vector3f(3f,0f,0f),
+                1f,0.5f,0.5f
+        );
+
+        PointLight pointLight2 = new PointLight(
+                new Vector3f(1f),
+                new Vector3f(1),
+                new Vector3f(1),
+                new Vector3f(-3f,0f,0f),
                 1f,1f,1f
         );
         world.addPointLight(pointLight);
+        world.addPointLight(pointLight2);
 
 
         while(!engine.shouldCloseWindow())   {

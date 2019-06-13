@@ -17,7 +17,7 @@ public abstract class GBufferLightRendererBase extends DrawComponentBase {
     private static final int TEX_GAMBIENT = 12;
     private static final int TEX_GALBEDOSPEC = 13;
 
-    protected DrawableObjectIf drawableObject;
+    protected DrawableObjectIf drawObject;
     private int program;
 
     protected GBufferLightRendererBase(String name)   {
@@ -27,7 +27,7 @@ public abstract class GBufferLightRendererBase extends DrawComponentBase {
             add(GBUFFER_NORMAL);
             add(GBUFFER_AMBIENT);
             add(GBUFFER_ALBEDOSPEC);
-            add(GBUFFER_COMPOSITOR_FBO);
+            add(GBUFFER_FBO);
         }}, new HashSet<>());
     }
 
@@ -57,7 +57,7 @@ public abstract class GBufferLightRendererBase extends DrawComponentBase {
         if(viewPosBlockLoc == -1)
             return false;
         glUniformBlockBinding(program, viewPosBlockLoc, VIEW_POS_BINDING_POINT);
-        this.drawableObject = buildDrawableObject();
+        this.drawObject = buildDrawableObject();
 
         return true;
     }
@@ -69,7 +69,7 @@ public abstract class GBufferLightRendererBase extends DrawComponentBase {
     @Override
     public void beforeDraw(DrawContextIf context) {
         glUseProgram(program);
-        glBindFramebuffer(GL_FRAMEBUFFER, context.retrieveDatum(GBUFFER_COMPOSITOR_FBO));
+        glBindFramebuffer(GL_FRAMEBUFFER, context.retrieveDatum(GBUFFER_FBO));
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_STENCIL_TEST);
         glEnable(GL_BLEND);
@@ -95,13 +95,13 @@ public abstract class GBufferLightRendererBase extends DrawComponentBase {
         Iterable<AbstractLight> lights = getLights(context);
         for(AbstractLight light : lights)   {
             glBindBufferBase(GL_UNIFORM_BUFFER, LIGHT_BINDING_POINT, light.getUbo());
-            handleOneLight(light, drawableObject);
-            for(Mesh mesh : drawableObject.getMeshes()) {
+            handleOneLight(light, drawObject);
+            for(Mesh mesh : drawObject.getMeshes()) {
                 glBindVertexArray(mesh.getVao());
-                if(!mesh.isUseIndices())
-                    glDrawArrays(GL_TRIANGLES,0,6);
+                if(mesh.isUseIndices())
+                    glDrawElementsInstanced(GL_TRIANGLES, mesh.getVerticesNumber(), GL_UNSIGNED_INT, 0L,drawObject.getInstances());
                 else
-                    glDrawElements(GL_TRIANGLES,mesh.getVerticesNumber(),GL_UNSIGNED_INT,0);
+                    glDrawArraysInstanced(GL_TRIANGLES, 0, mesh.getVerticesNumber(), drawObject.getInstances());
             }
 
         }
@@ -135,9 +135,9 @@ public abstract class GBufferLightRendererBase extends DrawComponentBase {
     @Override
     public void release() {
         super.release();
-        if(drawableObject != null)  {
-            drawableObject.release();
-            drawableObject = null;
+        if(drawObject != null)  {
+            drawObject.release();
+            drawObject = null;
         }
 
     }

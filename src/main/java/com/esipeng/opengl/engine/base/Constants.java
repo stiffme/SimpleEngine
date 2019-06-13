@@ -22,8 +22,8 @@ public class Constants {
     public static final String GBUFFER_AMBIENT = "GBUFFER_AMBIENT";
     public static final String GBUFFER_ALBEDOSPEC = "GBUFFER_ALBEDOSPEC";
     public static final String GBUFFER_FBO = "GBUFFER_FBO";
-    public static final String GBUFFER_COMPOSITOR_FBO = "GBUFFER_COMPOSITOR_FBO";
-    public static final String GBUFFER_COMPOSITOR_TEXTURE = "GBUFFER_COMPOSITOR_TEXTURE";
+    //public static final String GBUFFER_COMPOSITOR_FBO = "GBUFFER_COMPOSITOR_FBO";
+    //public static final String GBUFFER_COMPOSITOR_TEXTURE = "GBUFFER_COMPOSITOR_TEXTURE";
 
     public static UBOManager LIGHT_UBO_MANAGER = null;
 
