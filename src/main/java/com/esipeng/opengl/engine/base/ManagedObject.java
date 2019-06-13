@@ -157,6 +157,17 @@ public class ManagedObject implements ReleaseIf {
         return true;
     }
 
+    protected boolean setUniform2f(int program, String uniform, float v1, float v2)   {
+        int uniformLoc = glGetUniformLocation(program,uniform);
+        if(uniformLoc == -1)    {
+            logger.warn("Uniform {} not set for {} {}", uniform, v1, v2);
+            return false;
+        }
+        glUseProgram(program);
+        glUniform2f(uniformLoc, v1, v2);
+        return true;
+    }
+
     protected boolean setUniform3f(int program, String uniform, float v1, float v2, float v3)   {
         int uniformLoc = glGetUniformLocation(program,uniform);
         if(uniformLoc == -1)    {

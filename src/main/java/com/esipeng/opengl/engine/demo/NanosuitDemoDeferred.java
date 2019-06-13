@@ -3,6 +3,7 @@ package com.esipeng.opengl.engine.demo;
 import com.esipeng.opengl.engine.base.Engine;
 import com.esipeng.opengl.engine.base.World;
 import com.esipeng.opengl.engine.base.light.DirectionalLight;
+import com.esipeng.opengl.engine.base.light.PointLight;
 import com.esipeng.opengl.engine.importer.ModelImporter;
 import com.esipeng.opengl.engine.importer.NormalBrick;
 import com.esipeng.opengl.engine.shader.DebugWindowsRenderer;
@@ -10,6 +11,7 @@ import com.esipeng.opengl.engine.shader.OutputScreen;
 import com.esipeng.opengl.engine.shader.gbuffer.GBufferCompositor;
 import com.esipeng.opengl.engine.shader.gbuffer.GBufferDirLightRenderer;
 import com.esipeng.opengl.engine.shader.gbuffer.GBufferInputRenderer;
+import com.esipeng.opengl.engine.shader.gbuffer.GBufferPointLightRenderer;
 import com.esipeng.opengl.engine.spi.DrawComponentIf;
 import com.esipeng.opengl.engine.spi.DrawableObjectIf;
 import org.joml.Vector3f;
@@ -35,6 +37,7 @@ public class NanosuitDemoDeferred {
         DrawComponentIf gBufferCompositor = new GBufferCompositor("compositor");
 
         DrawComponentIf gbufferDirLightRenderer = new GBufferDirLightRenderer("Direction");
+        DrawComponentIf gbufferPointLightRenderer = new GBufferPointLightRenderer("Point");
 
         DrawComponentIf outputScreen = new OutputScreen("screen", GBUFFER_COMPOSITOR_TEXTURE);
 
@@ -49,8 +52,10 @@ public class NanosuitDemoDeferred {
         engine.addDrawComponent(gBufferRenderer)
                 .addDrawComponent(gBufferCompositor)
                 .addDrawComponent(gbufferDirLightRenderer)
-                .addDrawComponent(debugWindowsRenderer)
-                .addDrawComponent(outputScreen);
+                .addDrawComponent(gbufferPointLightRenderer)
+                .addDrawComponent(outputScreen)
+                .addDrawComponent(debugWindowsRenderer);
+                //.addDrawComponent(outputScreen);
 
         if(!engine.initAllComponents())
             return ;
@@ -89,8 +94,16 @@ public class NanosuitDemoDeferred {
                 new Vector3f(0,0.5f,0),
                 new Vector3f(0.2f),
                 new Vector3f(-1,0,-1));
-        world.addDirLight(dirLight);
-        world.addDirLight(dirLight2);
+        //world.addDirLight(dirLight);
+        //world.addDirLight(dirLight2);
+        PointLight pointLight = new PointLight(
+                new Vector3f(0.4f),
+                new Vector3f(10),
+                new Vector3f(10),
+                new Vector3f(0.5f,0.5f,2f),
+                1f,1f,1f
+        );
+        world.addPointLight(pointLight);
 
 
         while(!engine.shouldCloseWindow())   {

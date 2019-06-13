@@ -140,9 +140,10 @@ public class GBufferInputRenderer extends DrawComponentBase {
     @Override
     public void beforeDraw(DrawContextIf context) {
         glEnable(GL_DEPTH_TEST);
+        glDepthMask(true);
         glDisable(GL_BLEND);
         glEnable(GL_CULL_FACE);
-        glDisable(GL_STENCIL_TEST);
+        glEnable(GL_STENCIL_TEST);
         glBindFramebuffer(GL_FRAMEBUFFER,0);
         glClearColor(0f,0f,0f,0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -201,5 +202,6 @@ public class GBufferInputRenderer extends DrawComponentBase {
         glUseProgram(0);
         glDisable(GL_DEPTH_TEST);
         glBindFramebuffer(GL_FRAMEBUFFER,0);
+        glDepthMask(false);
     }
 }

@@ -1,8 +1,10 @@
 package com.esipeng.opengl.engine.shader.gbuffer;
 
 import com.esipeng.opengl.engine.base.DrawComponentBase;
+import com.esipeng.opengl.engine.base.Mesh;
 import com.esipeng.opengl.engine.base.light.AbstractLight;
 import com.esipeng.opengl.engine.spi.DrawContextIf;
+import com.esipeng.opengl.engine.spi.DrawableObjectIf;
 
 import java.util.HashSet;
 
@@ -15,7 +17,7 @@ public abstract class GBufferLightRendererBase extends DrawComponentBase {
     private static final int TEX_GAMBIENT = 12;
     private static final int TEX_GALBEDOSPEC = 13;
 
-    private int vao;
+    protected DrawableObjectIf drawableObject;
     private int program;
 
     protected GBufferLightRendererBase(String name)   {
@@ -31,7 +33,7 @@ public abstract class GBufferLightRendererBase extends DrawComponentBase {
 
     @Override
     public boolean init(DrawContextIf context){
-        program = compileProgram();
+        program = compileProgram(context);
         if(program == 0)
             return false;
 
@@ -55,40 +57,19 @@ public abstract class GBufferLightRendererBase extends DrawComponentBase {
         if(viewPosBlockLoc == -1)
             return false;
         glUniformBlockBinding(program, viewPosBlockLoc, VIEW_POS_BINDING_POINT);
-
-        float[] quadVertices = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
-                // positions   // texCoords
-                -1.0f,  1.0f,  0.0f, 1.0f,
-                -1.0f, -1.0f,  0.0f, 0.0f,
-                1.0f, -1.0f,  1.0f, 0.0f,
-
-                -1.0f,  1.0f,  0.0f, 1.0f,
-                1.0f, -1.0f,  1.0f, 0.0f,
-                1.0f,  1.0f,  1.0f, 1.0f
-        };
-
-        vao = getManagedVAO();
-        int vbo = getManagedVBO();
-        glBindVertexArray(vao);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER,quadVertices,GL_STATIC_DRAW);
-        glVertexAttribPointer(0,2,GL_FLOAT,false,Float.BYTES * 4, 0);
-        glVertexAttribPointer(1,2,GL_FLOAT,false,Float.BYTES * 4, Float.BYTES * 2);
-        glEnableVertexAttribArray(0);
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
+        this.drawableObject = buildDrawableObject();
 
         return true;
     }
 
-    protected abstract int compileProgram();
+    protected abstract DrawableObjectIf buildDrawableObject()    ;
+
+    protected abstract int compileProgram(DrawContextIf context);
 
     @Override
     public void beforeDraw(DrawContextIf context) {
         glUseProgram(program);
         glBindFramebuffer(GL_FRAMEBUFFER, context.retrieveDatum(GBUFFER_COMPOSITOR_FBO));
-        glBindVertexArray(vao);
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_STENCIL_TEST);
         glEnable(GL_BLEND);
@@ -107,12 +88,21 @@ public abstract class GBufferLightRendererBase extends DrawComponentBase {
         glBindTexture(GL_TEXTURE_2D, context.retrieveDatum(GBUFFER_ALBEDOSPEC));
     }
 
+    protected abstract void handleOneLight(AbstractLight light, DrawableObjectIf drawableObject);
+
     @Override
     public void draw(DrawContextIf context) {
         Iterable<AbstractLight> lights = getLights(context);
         for(AbstractLight light : lights)   {
             glBindBufferBase(GL_UNIFORM_BUFFER, LIGHT_BINDING_POINT, light.getUbo());
-            glDrawArrays(GL_TRIANGLES,0,6);
+            handleOneLight(light, drawableObject);
+            for(Mesh mesh : drawableObject.getMeshes()) {
+                glBindVertexArray(mesh.getVao());
+                if(!mesh.isUseIndices())
+                    glDrawArrays(GL_TRIANGLES,0,6);
+                else
+                    glDrawElements(GL_TRIANGLES,mesh.getVerticesNumber(),GL_UNSIGNED_INT,0);
+            }
 
         }
     }
@@ -140,5 +130,15 @@ public abstract class GBufferLightRendererBase extends DrawComponentBase {
 
         glDisable(GL_BLEND);
         glBindFramebuffer(GL_FRAMEBUFFER,0);
+    }
+
+    @Override
+    public void release() {
+        super.release();
+        if(drawableObject != null)  {
+            drawableObject.release();
+            drawableObject = null;
+        }
+
     }
 }

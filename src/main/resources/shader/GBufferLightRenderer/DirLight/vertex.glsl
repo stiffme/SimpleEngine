@@ -1,7 +1,7 @@
 #version 330 core
 
-layout(location=0) in vec2 aPos;
-layout(location=1) in vec2 aTexCoord;
+layout(location=4) in vec2 aPos;
+layout(location=5) in vec2 aTexCoord;
 out vec2 texCoord;
 
 void main() {

@@ -176,22 +176,42 @@ public class ModelImporter extends DrawableObjectBase {
             }
 
             //normal x y z
-            AIVector3D normal = aiMesh.mNormals().get(i);
-            verticesBuf.put(normal.x());
-            verticesBuf.put(normal.y());
-            verticesBuf.put(normal.z());
+            if(aiMesh.mNormals().get(i) == null)    {
+                verticesBuf.put(1);
+                verticesBuf.put(1);
+                verticesBuf.put(1);
+            } else {
+                AIVector3D normal = aiMesh.mNormals().get(i);
+                verticesBuf.put(normal.x());
+                verticesBuf.put(normal.y());
+                verticesBuf.put(normal.z());
+            }
+
 
             //tangent x y z
-            AIVector3D tangent = aiMesh.mTangents().get(i);
-            verticesBuf.put(tangent.x());
-            verticesBuf.put(tangent.y());
-            verticesBuf.put(tangent.z());
+            if(aiMesh.mTangents() == null || aiMesh.mTangents().get(i) == null)  {
+                verticesBuf.put(0);
+                verticesBuf.put(0);
+                verticesBuf.put(0);
+            } else  {
+                AIVector3D tangent = aiMesh.mTangents().get(i);
+                verticesBuf.put(tangent.x());
+                verticesBuf.put(tangent.y());
+                verticesBuf.put(tangent.z());
+            }
 
             //bitangent x y z
-            AIVector3D bitangent = aiMesh.mBitangents().get(i);
-            verticesBuf.put(bitangent.x());
-            verticesBuf.put(bitangent.y());
-            verticesBuf.put(bitangent.z());
+            if(aiMesh.mBitangents() == null || aiMesh.mBitangents().get(i) == null) {
+                verticesBuf.put(0);
+                verticesBuf.put(0);
+                verticesBuf.put(0);
+            } else  {
+                AIVector3D bitangent = aiMesh.mBitangents().get(i);
+                verticesBuf.put(bitangent.x());
+                verticesBuf.put(bitangent.y());
+                verticesBuf.put(bitangent.z());
+            }
+
         }
         verticesBuf.flip();
 
