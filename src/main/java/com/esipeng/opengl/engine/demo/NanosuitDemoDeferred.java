@@ -6,6 +6,8 @@ import com.esipeng.opengl.engine.base.light.DirectionalLight;
 import com.esipeng.opengl.engine.importer.ModelImporter;
 import com.esipeng.opengl.engine.importer.NormalBrick;
 import com.esipeng.opengl.engine.shader.DebugWindowsRenderer;
+import com.esipeng.opengl.engine.shader.OutputScreen;
+import com.esipeng.opengl.engine.shader.gbuffer.GBufferCompositor;
 import com.esipeng.opengl.engine.shader.gbuffer.GBufferDirLightRenderer;
 import com.esipeng.opengl.engine.shader.gbuffer.GBufferInputRenderer;
 import com.esipeng.opengl.engine.spi.DrawComponentIf;
@@ -30,7 +32,11 @@ public class NanosuitDemoDeferred {
                 "GBuffer"
         );
 
+        DrawComponentIf gBufferCompositor = new GBufferCompositor("compositor");
+
         DrawComponentIf gbufferDirLightRenderer = new GBufferDirLightRenderer("Direction");
+
+        DrawComponentIf outputScreen = new OutputScreen("screen", GBUFFER_COMPOSITOR_TEXTURE);
 
         List<String> debugDatums = new LinkedList<>();
         debugDatums.add(GBUFFER_POSITION);
@@ -39,11 +45,12 @@ public class NanosuitDemoDeferred {
         debugDatums.add(GBUFFER_ALBEDOSPEC);
         DebugWindowsRenderer debugWindowsRenderer = new DebugWindowsRenderer("debugWindow", debugDatums);
 
-
         //engine.addDrawComponent(plainInputRenderer).addDrawComponent(outputScreen);
         engine.addDrawComponent(gBufferRenderer)
+                .addDrawComponent(gBufferCompositor)
                 .addDrawComponent(gbufferDirLightRenderer)
-                .addDrawComponent(debugWindowsRenderer);
+                .addDrawComponent(debugWindowsRenderer)
+                .addDrawComponent(outputScreen);
 
         if(!engine.initAllComponents())
             return ;
@@ -74,10 +81,16 @@ public class NanosuitDemoDeferred {
         world.addObject(wall1);
         world.addObject(wall2);
         DirectionalLight dirLight = new DirectionalLight(new Vector3f(0.0f),
-                new Vector3f(0.5f),
+                new Vector3f(0.5f,0,0),
                 new Vector3f(0.2f),
-                new Vector3f(0,0,-1));
+                new Vector3f(1,0,-1));
+
+        DirectionalLight dirLight2 = new DirectionalLight(new Vector3f(0.0f),
+                new Vector3f(0,0.5f,0),
+                new Vector3f(0.2f),
+                new Vector3f(-1,0,-1));
         world.addDirLight(dirLight);
+        world.addDirLight(dirLight2);
 
 
         while(!engine.shouldCloseWindow())   {

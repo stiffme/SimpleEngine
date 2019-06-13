@@ -5,6 +5,8 @@ import com.esipeng.opengl.engine.base.World;
 import com.esipeng.opengl.engine.base.light.DirectionalLight;
 import com.esipeng.opengl.engine.importer.WoodCube;
 import com.esipeng.opengl.engine.shader.DebugWindowsRenderer;
+import com.esipeng.opengl.engine.shader.OutputScreen;
+import com.esipeng.opengl.engine.shader.gbuffer.GBufferCompositor;
 import com.esipeng.opengl.engine.shader.gbuffer.GBufferDirLightRenderer;
 import com.esipeng.opengl.engine.shader.gbuffer.GBufferInputRenderer;
 import com.esipeng.opengl.engine.spi.DrawComponentIf;
@@ -28,7 +30,11 @@ public class WoodCubeDemoDeferred {
                 "GBuffer"
         );
 
+        DrawComponentIf gBufferCompositor = new GBufferCompositor("compositor");
+
         DrawComponentIf gbufferDirLightRenderer = new GBufferDirLightRenderer("Direction");
+
+        DrawComponentIf outputScreen = new OutputScreen("output", GBUFFER_COMPOSITOR_TEXTURE);
 
         List<String> debugDatums = new LinkedList<>();
         debugDatums.add(GBUFFER_POSITION);
@@ -39,8 +45,10 @@ public class WoodCubeDemoDeferred {
 
 
         engine.addDrawComponent(gBufferRenderer)
+                .addDrawComponent(gBufferCompositor)
                 .addDrawComponent(gbufferDirLightRenderer)
-                .addDrawComponent(debugWindowsRenderer);
+                .addDrawComponent(debugWindowsRenderer)
+                .addDrawComponent(outputScreen);
 
         if(!engine.initAllComponents())
             return ;

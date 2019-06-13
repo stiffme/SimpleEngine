@@ -25,6 +25,7 @@ public abstract class GBufferLightRendererBase extends DrawComponentBase {
             add(GBUFFER_NORMAL);
             add(GBUFFER_AMBIENT);
             add(GBUFFER_ALBEDOSPEC);
+            add(GBUFFER_COMPOSITOR_FBO);
         }}, new HashSet<>());
     }
 
@@ -86,11 +87,12 @@ public abstract class GBufferLightRendererBase extends DrawComponentBase {
     @Override
     public void beforeDraw(DrawContextIf context) {
         glUseProgram(program);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, context.retrieveDatum(GBUFFER_COMPOSITOR_FBO));
         glBindVertexArray(vao);
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_STENCIL_TEST);
-        glDisable(GL_BLEND);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE);
 
         glActiveTexture(GL_TEXTURE0 + TEX_GPOSITION);
         glBindTexture(GL_TEXTURE_2D, context.retrieveDatum(GBUFFER_POSITION));
@@ -135,5 +137,8 @@ public abstract class GBufferLightRendererBase extends DrawComponentBase {
         glBindTexture(GL_TEXTURE_2D, 0);
 
         glActiveTexture(GL_TEXTURE0);
+
+        glDisable(GL_BLEND);
+        glBindFramebuffer(GL_FRAMEBUFFER,0);
     }
 }
