@@ -19,7 +19,7 @@ public class PointLight extends AbstractLight {
     )   {
 
         this(new Vector3f(ambientR, ambientG, ambientB),
-                new Vector3f(diffuseR,diffuseR,diffuseB),
+                new Vector3f(diffuseR,diffuseG,diffuseB),
                 new Vector3f(specularR,specularG,specularB),
                 new Vector3f(posX,posY,posZ),
                 constant,linear,quadratic);

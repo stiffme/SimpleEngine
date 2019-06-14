@@ -2,28 +2,24 @@ package com.esipeng.opengl.engine.demo;
 
 import com.esipeng.opengl.engine.base.Engine;
 import com.esipeng.opengl.engine.base.World;
-import com.esipeng.opengl.engine.base.light.DirectionalLight;
 import com.esipeng.opengl.engine.base.light.PointLight;
 import com.esipeng.opengl.engine.importer.ModelImporter;
-import com.esipeng.opengl.engine.importer.NormalBrick;
 import com.esipeng.opengl.engine.shader.DebugWindowsRenderer;
 import com.esipeng.opengl.engine.shader.OutputScreenFBO;
 import com.esipeng.opengl.engine.shader.gbuffer.GBufferDirLightRenderer;
 import com.esipeng.opengl.engine.shader.gbuffer.GBufferInputRenderer;
 import com.esipeng.opengl.engine.shader.gbuffer.GBufferPointLightRenderer;
 import com.esipeng.opengl.engine.spi.DrawComponentIf;
-import com.esipeng.opengl.engine.spi.DrawableObjectIf;
 import org.joml.Vector3f;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 
 import static com.esipeng.opengl.engine.base.Constants.*;
-import static org.lwjgl.glfw.GLFW.glfwGetTime;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
 
 public class NanosuitDemoDeferred {
-    private static final int NUM_INSTANCE = 25;
 
     public static void main(String[] args)  {
         Engine engine = new Engine(1024,768);
@@ -65,64 +61,48 @@ public class NanosuitDemoDeferred {
         if(!nanoSuit.loadFromLocation("/home/stiffme/models/nanosuitRef/nanosuit.obj"))
             return ;
 
-        nanoSuit.setInstances(NUM_INSTANCE);
-
-        int lenth = (int)Math.sqrt(NUM_INSTANCE);
-        float gap = 10.f / lenth;
-        for(int i = 0; i < NUM_INSTANCE; ++i)   {
-            int line = i % lenth;
-            int col = i / lenth;
-            nanoSuit.setScale(i, 0.1f);
-            nanoSuit.setPosition(i, -5.f + gap * line, -5f + gap * col, 0.0f);
-            nanoSuit.setRotate(i, (float)Math.toRadians(i),1.0f,1.0f,1.0f);
+        Vector3f[] positions = new Vector3f[]   {
+                new Vector3f(-3.0f,  -3.0f, -3.0f),
+                new Vector3f( 0.0f,  -3.0f, -3.0f),
+                new Vector3f( 3.0f,  -3.0f, -3.0f),
+                new Vector3f(-3.0f,  -3.0f,  0.0f),
+                new Vector3f( 0.0f,  -3.0f,  0.0f),
+                new Vector3f( 3.0f,  -3.0f,  0.0f),
+                new Vector3f(-3.0f,  -3.0f,  3.0f),
+                new Vector3f( 0.0f,  -3.0f,  3.0f),
+                new Vector3f( 3.0f,  -3.0f,  3.0f),
+        };
+        nanoSuit.setInstances(positions.length);
+        for(int i = 0; i < positions.length; ++ i)  {
+            nanoSuit.setPosition(i, positions[i]);
+            nanoSuit.setScale(i,0.25f);
         }
 
         world.addObject(nanoSuit);
-        DrawableObjectIf wall1 = new NormalBrick(true);
-        DrawableObjectIf wall2 = new NormalBrick(false);
-        wall1.setPosition(-1,0,-1);
-        wall2.setPosition(1,0,-1);
-        world.addObject(wall1);
-        world.addObject(wall2);
-        DirectionalLight dirLight = new DirectionalLight(new Vector3f(10.0f),
-                new Vector3f(10),
-                new Vector3f(0.2f),
-                new Vector3f(1,0,-1));
 
-        DirectionalLight dirLight2 = new DirectionalLight(new Vector3f(1.0f),
-                new Vector3f(1,1.1f,1),
-                new Vector3f(1f),
-                new Vector3f(-1,0,-1));
-        //world.addDirLight(dirLight);
-        //world.addDirLight(dirLight2);
-        PointLight pointLight = new PointLight(
-                new Vector3f(1f),
-                new Vector3f(1),
-                new Vector3f(1),
-                new Vector3f(3f,0f,0f),
-                1f,0.5f,0.5f
-        );
+        int NR_LIGHT = 32;
+        Random random = new Random();
+        for(int i = 0; i < NR_LIGHT; ++i) {
+            float xPos = random.nextFloat() * 6.0f - 3.0f;
+            float yPos = random.nextFloat() * 6.0f - 4.0f;
+            float zPos = random.nextFloat() * 6.0f - 3.0f;
 
-        PointLight pointLight2 = new PointLight(
-                new Vector3f(1f),
-                new Vector3f(1),
-                new Vector3f(1),
-                new Vector3f(-3f,0f,0f),
-                1f,1f,1f
-        );
-        world.addPointLight(pointLight);
-        world.addPointLight(pointLight2);
+            float r = random.nextFloat() * 0.5f + 0.5f;
+            float g = random.nextFloat() * 0.5f + 0.5f;
+            float b = random.nextFloat() * 0.5f + 0.5f;
+            PointLight pointLight = new PointLight(
+                    0.1f,0.1f,0.1f,
+                    r,g,b,
+                    r,g,b,
+                    xPos,yPos,zPos,
+                    1.0f,0.7f,1.8f
+            );
+            world.addPointLight(pointLight);
+        }
 
 
         while(!engine.shouldCloseWindow())   {
             glfwPollEvents();
-
-
-            for(int i = 0; i < NUM_INSTANCE; ++i)   {
-                nanoSuit.setRotate(i, (float)Math.toRadians(i + glfwGetTime() * 25),0.0f,1.0f,0.0f);
-            }
-            wall1.setRotate( (float)Math.toRadians( glfwGetTime() * 25),0.0f,1.0f,0.0f);
-            wall2.setRotate( (float)Math.toRadians( glfwGetTime() * 25),0.0f,1.0f,0.0f);
             engine.draw(world);
         }
 

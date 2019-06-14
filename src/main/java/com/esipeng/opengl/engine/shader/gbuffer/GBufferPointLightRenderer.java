@@ -103,15 +103,23 @@ public class GBufferPointLightRenderer extends GBufferLightRendererBase {
             glStencilOp(GL_KEEP,GL_KEEP,GL_KEEP);
             glDisable(GL_DEPTH_TEST);
 
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_FRONT);
+
             glUseProgram(program);
-            glStencilFunc(GL_NOTEQUAL,0,0xFF);
+            glStencilFunc(GL_NOTEQUAL,0x0,0xFF);
             renderObject(drawObject);
+
+            glCullFace(GL_BACK);
+            glDisable(GL_CULL_FACE);
 
             if(debug)   {
                 glUseProgram(dummyShader);
                 glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
                 glStencilFunc(GL_ALWAYS,0,0xFF);
+                //glEnable(GL_CULL_FACE);
                 renderObject(drawObject);
+                //glDisable(GL_CULL_FACE);
                 glBlendFunc(GL_ONE, GL_ONE);
             }
 
