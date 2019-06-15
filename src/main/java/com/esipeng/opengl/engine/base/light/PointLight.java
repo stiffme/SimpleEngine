@@ -54,7 +54,7 @@ public class PointLight extends AbstractLight {
     }
 
     public float getRadius()    {
-        float delta = (float)Math.sqrt(linear * linear - 4 * quadratic * (constant - 256 * maxIntense));
+        float delta = (float)Math.sqrt(linear * linear - 4 * quadratic * (constant - 256f / 5f * maxIntense));
         float ret = (-linear + delta) / (2 * quadratic);
         return ret;
         //return 2;
