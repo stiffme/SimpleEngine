@@ -80,7 +80,7 @@ public class NanosuitDemoDeferred {
 
         world.addObject(nanoSuit);
 
-        int NR_LIGHT = 32;
+        int NR_LIGHT = 64;
         Random random = new Random();
         for(int i = 0; i < NR_LIGHT; ++i) {
             float xPos = random.nextFloat() * 6.0f - 3.0f;
